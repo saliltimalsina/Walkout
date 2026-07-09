@@ -25,6 +25,7 @@ mixin _$Fighter {
   int? get rankingPosition; // null when unranked
   bool get isChampion;
   String get imageUrl;
+  String get photoUrl; // CDN full-body cutout from ingest, if any
   int get heightCm;
   int get reachCm;
   int get age;
@@ -65,6 +66,8 @@ mixin _$Fighter {
                 other.isChampion == isChampion) &&
             (identical(other.imageUrl, imageUrl) ||
                 other.imageUrl == imageUrl) &&
+            (identical(other.photoUrl, photoUrl) ||
+                other.photoUrl == photoUrl) &&
             (identical(other.heightCm, heightCm) ||
                 other.heightCm == heightCm) &&
             (identical(other.reachCm, reachCm) || other.reachCm == reachCm) &&
@@ -94,6 +97,7 @@ mixin _$Fighter {
         rankingPosition,
         isChampion,
         imageUrl,
+        photoUrl,
         heightCm,
         reachCm,
         age,
@@ -107,7 +111,7 @@ mixin _$Fighter {
 
   @override
   String toString() {
-    return 'Fighter(id: $id, name: $name, nickname: $nickname, weightClass: $weightClass, country: $country, flag: $flag, record: $record, rankingPosition: $rankingPosition, isChampion: $isChampion, imageUrl: $imageUrl, heightCm: $heightCm, reachCm: $reachCm, age: $age, stance: $stance, stats: $stats, bio: $bio, winsByKo: $winsByKo, winsBySub: $winsBySub, winsByDec: $winsByDec)';
+    return 'Fighter(id: $id, name: $name, nickname: $nickname, weightClass: $weightClass, country: $country, flag: $flag, record: $record, rankingPosition: $rankingPosition, isChampion: $isChampion, imageUrl: $imageUrl, photoUrl: $photoUrl, heightCm: $heightCm, reachCm: $reachCm, age: $age, stance: $stance, stats: $stats, bio: $bio, winsByKo: $winsByKo, winsBySub: $winsBySub, winsByDec: $winsByDec)';
   }
 }
 
@@ -127,6 +131,7 @@ abstract mixin class $FighterCopyWith<$Res> {
       int? rankingPosition,
       bool isChampion,
       String imageUrl,
+      String photoUrl,
       int heightCm,
       int reachCm,
       int age,
@@ -163,6 +168,7 @@ class _$FighterCopyWithImpl<$Res> implements $FighterCopyWith<$Res> {
     Object? rankingPosition = freezed,
     Object? isChampion = null,
     Object? imageUrl = null,
+    Object? photoUrl = null,
     Object? heightCm = null,
     Object? reachCm = null,
     Object? age = null,
@@ -213,6 +219,10 @@ class _$FighterCopyWithImpl<$Res> implements $FighterCopyWith<$Res> {
       imageUrl: null == imageUrl
           ? _self.imageUrl
           : imageUrl // ignore: cast_nullable_to_non_nullable
+              as String,
+      photoUrl: null == photoUrl
+          ? _self.photoUrl
+          : photoUrl // ignore: cast_nullable_to_non_nullable
               as String,
       heightCm: null == heightCm
           ? _self.heightCm
@@ -288,6 +298,7 @@ class _Fighter extends Fighter {
       this.rankingPosition,
       this.isChampion = false,
       this.imageUrl = '',
+      this.photoUrl = '',
       this.heightCm = 0,
       this.reachCm = 0,
       this.age = 0,
@@ -329,6 +340,10 @@ class _Fighter extends Fighter {
   @override
   @JsonKey()
   final String imageUrl;
+  @override
+  @JsonKey()
+  final String photoUrl;
+// CDN full-body cutout from ingest, if any
   @override
   @JsonKey()
   final int heightCm;
@@ -392,6 +407,8 @@ class _Fighter extends Fighter {
                 other.isChampion == isChampion) &&
             (identical(other.imageUrl, imageUrl) ||
                 other.imageUrl == imageUrl) &&
+            (identical(other.photoUrl, photoUrl) ||
+                other.photoUrl == photoUrl) &&
             (identical(other.heightCm, heightCm) ||
                 other.heightCm == heightCm) &&
             (identical(other.reachCm, reachCm) || other.reachCm == reachCm) &&
@@ -421,6 +438,7 @@ class _Fighter extends Fighter {
         rankingPosition,
         isChampion,
         imageUrl,
+        photoUrl,
         heightCm,
         reachCm,
         age,
@@ -434,7 +452,7 @@ class _Fighter extends Fighter {
 
   @override
   String toString() {
-    return 'Fighter(id: $id, name: $name, nickname: $nickname, weightClass: $weightClass, country: $country, flag: $flag, record: $record, rankingPosition: $rankingPosition, isChampion: $isChampion, imageUrl: $imageUrl, heightCm: $heightCm, reachCm: $reachCm, age: $age, stance: $stance, stats: $stats, bio: $bio, winsByKo: $winsByKo, winsBySub: $winsBySub, winsByDec: $winsByDec)';
+    return 'Fighter(id: $id, name: $name, nickname: $nickname, weightClass: $weightClass, country: $country, flag: $flag, record: $record, rankingPosition: $rankingPosition, isChampion: $isChampion, imageUrl: $imageUrl, photoUrl: $photoUrl, heightCm: $heightCm, reachCm: $reachCm, age: $age, stance: $stance, stats: $stats, bio: $bio, winsByKo: $winsByKo, winsBySub: $winsBySub, winsByDec: $winsByDec)';
   }
 }
 
@@ -455,6 +473,7 @@ abstract mixin class _$FighterCopyWith<$Res> implements $FighterCopyWith<$Res> {
       int? rankingPosition,
       bool isChampion,
       String imageUrl,
+      String photoUrl,
       int heightCm,
       int reachCm,
       int age,
@@ -493,6 +512,7 @@ class __$FighterCopyWithImpl<$Res> implements _$FighterCopyWith<$Res> {
     Object? rankingPosition = freezed,
     Object? isChampion = null,
     Object? imageUrl = null,
+    Object? photoUrl = null,
     Object? heightCm = null,
     Object? reachCm = null,
     Object? age = null,
@@ -543,6 +563,10 @@ class __$FighterCopyWithImpl<$Res> implements _$FighterCopyWith<$Res> {
       imageUrl: null == imageUrl
           ? _self.imageUrl
           : imageUrl // ignore: cast_nullable_to_non_nullable
+              as String,
+      photoUrl: null == photoUrl
+          ? _self.photoUrl
+          : photoUrl // ignore: cast_nullable_to_non_nullable
               as String,
       heightCm: null == heightCm
           ? _self.heightCm

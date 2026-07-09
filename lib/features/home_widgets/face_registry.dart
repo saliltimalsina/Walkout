@@ -190,13 +190,13 @@ abstract final class FaceRegistry {
       ),
       if (champsList.isNotEmpty)
         NewsItem(
-          image: champsList[0].imageUrl,
+          image: champsList[0].photo,
           title: "Behind the scenes of ${lastNameOf(champsList[0].name)}'s camp",
           time: '5h ago',
         ),
       if (champsList.length > 1)
         NewsItem(
-          image: champsList[1].imageUrl,
+          image: champsList[1].photo,
           title: '${lastNameOf(champsList[1].name)} in the spotlight',
           time: '7h ago',
         ),
@@ -244,7 +244,7 @@ abstract final class FaceRegistry {
         deeplink: eventLink(nextEvent),
         face: FightClockFace(
             event: nextEvent, now: now, red: nextRed, blue: nextBlue),
-        assets: [nextRed?.imageUrl ?? '', nextBlue?.imageUrl ?? ''],
+        assets: [nextRed?.photo ?? '', nextBlue?.photo ?? ''],
       ),
       FaceSpec(
         key: 'corner',
@@ -258,7 +258,7 @@ abstract final class FaceRegistry {
               CornerEntry(fighter: f, sub: cornerSub(f)),
           ],
         ),
-        assets: [for (final f in cornerFighters.take(4)) f.imageUrl],
+        assets: [for (final f in cornerFighters.take(4)) f.photo],
       ),
       FaceSpec(
         key: 'octagon_count',
@@ -273,7 +273,7 @@ abstract final class FaceRegistry {
         size: four2,
         deeplink: eventLink(boutEvent),
         face: FaceoffFace(event: boutEvent, bout: bout, red: red, blue: blue),
-        assets: [red?.imageUrl ?? '', blue?.imageUrl ?? ''],
+        assets: [red?.photo ?? '', blue?.photo ?? ''],
       ),
       FaceSpec(
         key: 'last5',
@@ -290,7 +290,7 @@ abstract final class FaceRegistry {
         face: (red != null && blue != null)
             ? TapeFace(red: red, blue: blue)
             : FightClockFace(event: boutEvent, now: now),
-        assets: [red?.imageUrl ?? '', blue?.imageUrl ?? ''],
+        assets: [red?.photo ?? '', blue?.photo ?? ''],
       ),
       FaceSpec(
         key: 'belts',
@@ -298,7 +298,7 @@ abstract final class FaceRegistry {
         size: two2,
         deeplink: 'walkout://fighter/${champ.id}',
         face: BeltsFace(champ: champ),
-        assets: [champ.imageUrl],
+        assets: [champ.photo],
       ),
       FaceSpec(
         key: 'momentum',
@@ -372,7 +372,7 @@ abstract final class FaceRegistry {
         face: NewsFace(items: newsItems),
         assets: [
           nextEvent.heroImage,
-          for (final c in champsList.take(2)) c.imageUrl,
+          for (final c in champsList.take(2)) c.photo,
         ],
       ),
       FaceSpec(
@@ -454,7 +454,7 @@ abstract final class FaceRegistry {
       case 'belts':
         return (
           face: BeltsFace(champ: fighter),
-          assets: [fighter.imageUrl],
+          assets: [fighter.photo],
           deeplink: link,
           size: two2,
         );

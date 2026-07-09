@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:walkout/shared/models/models.dart';
 
+import 'face_kit.dart';
+
 /// The Face-Off home-screen widget face: two corners edge to edge, met by a
 /// red aura seam — poster of the featured fight, tuned for a 4x2 cell.
 ///
@@ -192,7 +194,7 @@ class FaceoffFace extends StatelessWidget {
   }
 
   Widget _portrait(Fighter? f, {required bool alignRight}) {
-    if (f == null || f.imageUrl.isEmpty) {
+    if (f == null || f.photo.isEmpty) {
       return const ColoredBox(color: Color(0xFF161618));
     }
     // Fade the inner edge into the dark bg with a gradient overlay instead of
@@ -201,12 +203,11 @@ class FaceoffFace extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.asset(
-          f.imageUrl,
+        FaceKit.image(
+          f.photo,
           fit: BoxFit.cover,
           alignment: Alignment(alignRight ? 0.2 : -0.2, -0.9),
-          errorBuilder: (_, __, ___) =>
-              const ColoredBox(color: Color(0xFF161618)),
+          fallback: const ColoredBox(color: Color(0xFF161618)),
         ),
         DecoratedBox(
           decoration: BoxDecoration(

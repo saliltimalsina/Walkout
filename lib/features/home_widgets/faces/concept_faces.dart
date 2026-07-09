@@ -68,8 +68,8 @@ class FightClockFace extends StatelessWidget {
     final hours = diff.inHours % 24;
     final mins = diff.inMinutes % 60;
     final fightWeek = !diff.isNegative && diff.inDays <= 7;
-    final hasPortraits = (red?.imageUrl.isNotEmpty ?? false) &&
-        (blue?.imageUrl.isNotEmpty ?? false);
+    final hasPortraits = (red?.photo.isNotEmpty ?? false) &&
+        (blue?.photo.isNotEmpty ?? false);
 
     final title = hasPortraits
         ? '${FaceKit.lastName(red!.name)}  VS  ${FaceKit.lastName(blue!.name)}'
@@ -89,11 +89,11 @@ class FightClockFace extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             if (hasPortraits) ...[
-              FaceKit.sideCutout(red!.imageUrl,
+              FaceKit.sideCutout(red!.photo,
                   right: false,
                   width: 92,
                   imageAlign: const Alignment(-0.1, -0.85)),
-              FaceKit.sideCutout(blue!.imageUrl,
+              FaceKit.sideCutout(blue!.photo,
                   right: true,
                   width: 92,
                   imageAlign: const Alignment(0.1, -0.85)),
@@ -237,12 +237,16 @@ class CornerFace extends StatelessWidget {
               border: Border.all(color: FaceKit.line),
               color: FaceKit.bgDeep,
             ),
-            child: e.fighter.imageUrl.isEmpty
+            child: e.fighter.photo.isEmpty
                 ? Center(
                     child: Text(FaceKit.lastName(e.fighter.name)[0],
                         style: FaceKit.anton(22, c: FaceKit.t3)))
-                : Image.asset(e.fighter.imageUrl,
-                    fit: BoxFit.cover, alignment: Alignment.topCenter),
+                : FaceKit.image(e.fighter.photo,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                    fallback: Center(
+                        child: Text(FaceKit.lastName(e.fighter.name)[0],
+                            style: FaceKit.anton(22, c: FaceKit.t3)))),
           ),
         ),
         const SizedBox(height: 5),
@@ -492,14 +496,16 @@ class TapeFace extends StatelessWidget {
               border: Border.all(color: FaceKit.line),
               color: FaceKit.bgDeep,
             ),
-            child: f.imageUrl.isEmpty
+            child: f.photo.isEmpty
                 ? Center(
                     child: Text(FaceKit.lastName(f.name)[0],
                         style: FaceKit.anton(20, c: FaceKit.t3)))
-                : Image.asset(f.imageUrl,
+                : FaceKit.image(f.photo,
                     fit: BoxFit.cover,
                     alignment: const Alignment(0, -0.7),
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                    fallback: Center(
+                        child: Text(FaceKit.lastName(f.name)[0],
+                            style: FaceKit.anton(20, c: FaceKit.t3)))),
           ),
         ),
         const SizedBox(height: 4),
@@ -529,12 +535,12 @@ class BeltsFace extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (champ.imageUrl.isNotEmpty)
+          if (champ.photo.isNotEmpty)
             Positioned(
               right: -18,
               top: 4,
               bottom: 0,
-              child: FaceKit.portrait(champ.imageUrl,
+              child: FaceKit.portrait(champ.photo,
                   width: 100, fadeLeft: true),
             ),
           Padding(

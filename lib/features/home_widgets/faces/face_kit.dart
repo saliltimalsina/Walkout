@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import '../widget_image_resolver.dart';
+
 /// Shared visual language for every widget face. Faces render offscreen to
 /// PNG, so everything here must paint synchronously (no ShaderMask, no
 /// network images) and use only `widgets.dart` primitives.
@@ -37,6 +39,25 @@ abstract final class FaceKit {
         letterSpacing: 0.4,
         color: c,
       );
+
+  /// Paints a face image from a bundled asset path OR a remote CDN URL
+  /// (pre-downloaded by [WidgetImageResolver]). Falls back to [fallback] (or
+  /// nothing) if a remote image isn't cached, so faces never show a broken box.
+  static Widget image(
+    String ref, {
+    BoxFit fit = BoxFit.cover,
+    Alignment alignment = Alignment.center,
+    Widget? fallback,
+  }) {
+    final provider = WidgetImageResolver.provider(ref);
+    if (provider == null) return fallback ?? const SizedBox.shrink();
+    return Image(
+      image: provider,
+      fit: fit,
+      alignment: alignment,
+      errorBuilder: (_, __, ___) => fallback ?? const SizedBox.shrink(),
+    );
+  }
 
   static String lastName(String? n) {
     if (n == null || n.isEmpty) return '';
@@ -140,7 +161,7 @@ abstract final class FaceKit {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(asset, fit: BoxFit.cover, alignment: align),
+          image(asset, fit: BoxFit.cover, alignment: align),
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -199,12 +220,7 @@ abstract final class FaceKit {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(
-              asset,
-              fit: BoxFit.cover,
-              alignment: imageAlign,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-            ),
+            image(asset, fit: BoxFit.cover, alignment: imageAlign),
             // Fade the inner edge into the card.
             DecoratedBox(
               decoration: BoxDecoration(

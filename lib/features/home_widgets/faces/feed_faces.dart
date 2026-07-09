@@ -107,11 +107,10 @@ class NewsFace extends StatelessWidget {
               height: double.infinity,
               child: s.image.isEmpty
                   ? const ColoredBox(color: FaceKit.bgDeep)
-                  : Image.asset(s.image,
+                  : FaceKit.image(s.image,
                       fit: BoxFit.cover,
                       alignment: const Alignment(0, -0.3),
-                      errorBuilder: (_, __, ___) =>
-                          const ColoredBox(color: FaceKit.bgDeep)),
+                      fallback: const ColoredBox(color: FaceKit.bgDeep)),
             ),
           ),
         ],

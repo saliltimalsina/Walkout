@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:walkout/shared/models/models.dart';
 
 import '../application/living_state.dart';
+import 'face_kit.dart';
 import 'octagon_ring.dart';
 
 /// The Living Widget's 4x2 face — renders every [LivingState] with one
@@ -127,7 +128,7 @@ class LivingFace extends StatelessWidget {
 
   /// A right-anchored portrait that fades into the bg via a gradient overlay.
   Widget _portrait(Fighter? f, {double widthFactor = 0.44, bool left = false}) {
-    if (f == null || f.imageUrl.isEmpty) return const SizedBox.shrink();
+    if (f == null || f.photo.isEmpty) return const SizedBox.shrink();
     return Align(
       alignment: left ? Alignment.centerLeft : Alignment.centerRight,
       child: FractionallySizedBox(
@@ -136,11 +137,10 @@ class LivingFace extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(
-              f.imageUrl,
+            FaceKit.image(
+              f.photo,
               fit: BoxFit.cover,
               alignment: const Alignment(0, -0.72),
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             ),
             DecoratedBox(
               decoration: BoxDecoration(

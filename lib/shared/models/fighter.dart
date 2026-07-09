@@ -22,6 +22,7 @@ abstract class Fighter with _$Fighter {
     int? rankingPosition, // null when unranked
     @Default(false) bool isChampion,
     @Default('') String imageUrl,
+    @Default('') String photoUrl, // CDN full-body cutout from ingest, if any
     @Default(0) int heightCm,
     @Default(0) int reachCm,
     @Default(0) int age,
@@ -37,6 +38,9 @@ abstract class Fighter with _$Fighter {
       _$FighterFromJson(json);
 
   String get displayName => nickname.isEmpty ? name : name;
+
+  /// Preferred image: the fresh CDN cutout when present, else the bundled one.
+  String get photo => photoUrl.isEmpty ? imageUrl : photoUrl;
 
   String get rankLabel {
     if (isChampion) return 'C';

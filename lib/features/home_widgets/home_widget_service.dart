@@ -10,6 +10,7 @@ import 'application/living_state.dart';
 import 'face_registry.dart';
 import 'faces/living_face.dart';
 import 'widget_capture.dart';
+import 'widget_image_resolver.dart';
 
 /// Bridges app data to the native home-screen widgets: resolves subjects,
 /// renders every face on the board to PNG and pushes update broadcasts.
@@ -52,8 +53,8 @@ class HomeWidgetService {
       fighterById: dataset.fighterById,
     );
     await _warmAssets([
-      snapshot.fighter?.imageUrl ?? '',
-      snapshot.opponent?.imageUrl ?? '',
+      snapshot.fighter?.photo ?? '',
+      snapshot.opponent?.photo ?? '',
     ]);
 
     final livingPath = await WidgetCapture.toPngFile(
@@ -177,36 +178,11 @@ class HomeWidgetService {
 
   // ── Asset pre-warming ──────────────────────────────────────────────
 
-  /// renderFlutterWidget captures synchronously; async `Image.asset` loads
-  /// wouldn't be painted yet (`!debugNeedsPaint` assertion). Resolving the
-  /// asset images to completion here populates the global image cache so the
-  /// faces paint their portraits synchronously during capture.
-  static Future<void> _warmAssets(Iterable<String> assetPaths) async {
-    final futures = <Future<void>>[];
-    for (final path in assetPaths) {
-      if (path.isEmpty) continue;
-      final provider = AssetImage(path);
-      final completer = Completer<void>();
-      final stream = provider.resolve(ImageConfiguration.empty);
-      late final ImageStreamListener listener;
-      listener = ImageStreamListener(
-        (_, __) {
-          if (!completer.isCompleted) completer.complete();
-          stream.removeListener(listener);
-        },
-        onError: (_, __) {
-          if (!completer.isCompleted) completer.complete();
-          stream.removeListener(listener);
-        },
-      );
-      stream.addListener(listener);
-      futures.add(completer.future.timeout(
-        const Duration(seconds: 2),
-        onTimeout: () {},
-      ));
-    }
-    await Future.wait(futures);
-  }
+  /// The offscreen capture paints synchronously, so images must be ready in
+  /// the cache first. This downloads any remote CDN refs to disk (deduped) and
+  /// warms every ref (asset or file) into the image cache before render.
+  static Future<void> _warmAssets(Iterable<String> refs) =>
+      WidgetImageResolver.warm(refs);
 
   // ── Launch / deep links ────────────────────────────────────────────
 
