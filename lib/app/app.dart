@@ -1,19 +1,63 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 import '../core/constants/app_constants.dart';
 import '../core/providers/app_providers.dart';
 import '../core/router/app_router.dart';
 import '../core/theme/app_theme.dart';
+import '../features/home_widgets/home_widget_service.dart';
+import '../shared/providers/favorites_controller.dart';
 
 /// Root application widget. Wires the router, light/dark themes, the persisted
-/// theme mode, and responsive breakpoints.
-class WalkoutApp extends ConsumerWidget {
+/// theme mode, responsive breakpoints, and the home-screen widget bridge.
+class WalkoutApp extends ConsumerStatefulWidget {
   const WalkoutApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WalkoutApp> createState() => _WalkoutAppState();
+}
+
+class _WalkoutAppState extends ConsumerState<WalkoutApp> {
+  StreamSubscription<Uri?>? _widgetClicks;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initHomeWidgets());
+  }
+
+  Future<void> _initHomeWidgets() async {
+    // Cold-launch from a widget tap: route to its deep link.
+    final launchUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
+    final launchRoute = HomeWidgetService.routeFromUri(launchUri);
+    if (launchRoute != null && mounted) {
+      ref.read(goRouterProvider).go(launchRoute);
+    }
+    // Warm-app widget taps.
+    _widgetClicks = HomeWidget.widgetClicked.listen((uri) {
+      final route = HomeWidgetService.routeFromUri(uri);
+      if (route != null && mounted) ref.read(goRouterProvider).push(route);
+    });
+    // First render + keep faces fresh when favorites change.
+    final storage = ref.read(storageServiceProvider);
+    unawaited(HomeWidgetService.refresh(storage));
+    ref.listenManual(favoritesProvider, (_, __) {
+      unawaited(HomeWidgetService.refresh(storage));
+    });
+  }
+
+  @override
+  void dispose() {
+    _widgetClicks?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(goRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Typography tokens. A single type scale drives the whole app.
 ///
@@ -15,10 +14,12 @@ abstract final class AppTypography {
 
   static const FontWeight extraBold = FontWeight.w800;
 
-  /// Body / UI font — Inter.
+  /// Body / UI font — Inter (bundled asset; no runtime fetch so background
+  /// widget renders always have the face available).
   static TextStyle _base(double size, double height, FontWeight weight,
       {double? letterSpacing}) {
-    return GoogleFonts.inter(
+    return TextStyle(
+      fontFamily: 'Inter',
       fontSize: size,
       height: height / size,
       fontWeight: weight,
@@ -28,10 +29,11 @@ abstract final class AppTypography {
 
   /// Display / heading font — Anton, a heavy condensed block face; the
   /// closest free match to UFC's headline typography. Single ultra-bold
-  /// weight, so requested weights are decorative only.
+  /// weight, so requested weights are decorative only. Bundled asset.
   static TextStyle _display(double size, double height, FontWeight weight,
       {double letterSpacing = 0.4}) {
-    return GoogleFonts.anton(
+    return TextStyle(
+      fontFamily: 'Anton',
       fontSize: size,
       height: height / size,
       fontWeight: weight,

@@ -51,6 +51,8 @@ dependencies:
   path_drawing: ^1.0.1
   share_plus: ^10.1.4
   path_provider: ^2.1.5
+  home_widget: ^0.9.2+1
+  workmanager: ^0.7.0
 
 dev_dependencies:
   flutter_test:
@@ -110,6 +112,15 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+
+  fonts:
+    - family: Anton
+      fonts:
+        - asset: assets/fonts/Anton-Regular.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Variable.ttf
 
 flutter_launcher_icons:
   android: true
