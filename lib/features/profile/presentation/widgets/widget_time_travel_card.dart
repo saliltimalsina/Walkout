@@ -6,7 +6,6 @@ import 'package:walkout/core/theme/app_radius.dart';
 import 'package:walkout/core/theme/app_spacing.dart';
 import 'package:walkout/core/utils/context_extensions.dart';
 import 'package:walkout/features/home_widgets/home_widget_service.dart';
-import 'package:walkout/shared/models/models.dart';
 import 'package:walkout/shared/providers/data_providers.dart';
 import 'package:walkout/shared/providers/favorites_controller.dart';
 import 'package:walkout/shared/widgets/widgets.dart';

@@ -31,14 +31,12 @@ class HomeWidgetService {
   /// foreground.
   static Future<void> refresh(StorageService storage) async {
     try {
-      debugPrint('[widgets] refresh start');
       final dataset = await AppDataset.load();
       final favorites = storage.favoriteFighterIds;
       final now =
           DateTime.now().add(Duration(hours: storage.widgetTimeOffsetHours));
       await _refreshFaceoff(dataset, favorites);
       await _refreshLiving(dataset, favorites, now);
-      debugPrint('[widgets] refresh done');
     } catch (e, st) {
       // Widget refresh must never take the app down. Next foreground retries.
       debugPrint('[widgets] refresh FAILED: $e\n$st');
