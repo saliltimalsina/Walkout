@@ -18,8 +18,6 @@ jobs:
           python-version: "3.12"
       - name: Install deps
         run: pip install -r tools/ingest/requirements.txt
-      - name: Install Scrapling browser
-        run: python -m scrapling install || true
       - name: Write service account
         run: echo "$FIREBASE_SA" > "${RUNNER_TEMP}/sa.json"
         env:
