@@ -20,11 +20,17 @@ import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/rankings/presentation/screens/rankings_screen.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
+import '../../features/home_widgets/home_widget_service.dart';
 import '../constants/app_constants.dart';
 import '../providers/app_providers.dart';
 import 'app_routes.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
+
+/// A widget deep link captured on cold launch, to be applied by the splash
+/// once the render engine is warm. Deep-linking straight into a target on a
+/// cold engine renders black; the splash plays first, then pushes this.
+String? pendingWidgetRoute;
 
 /// Centralized app router. Exposed as a provider so the onboarding-gate redirect
 /// can read persisted state from [StorageService].
@@ -36,12 +42,26 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: false,
     redirect: (context, state) {
+      // Widget taps cold-launch the app with their raw `walkout://…` deep link
+      // as the initial route. Translate it to an in-app path before anything
+      // else (otherwise go_router can't match the custom scheme → "Route not
+      // found"). Warm-app taps are handled by the widgetClicked stream.
+      if (state.uri.scheme == 'walkout') {
+        final target =
+            HomeWidgetService.routeFromUri(state.uri) ?? AppRoutes.home;
+        pendingWidgetRoute = target == AppRoutes.home ? null : target;
+        return AppRoutes.splash;
+      }
       // The splash always plays; it decides where to go when it finishes.
       if (state.matchedLocation == AppRoutes.splash) return null;
       // Dev mode: no gate — cold-start lands on onboarding, navigation is free.
       if (AppConstants.alwaysShowOnboarding) return null;
       final onboarded = storage.onboardingComplete;
-      final atOnboarding = state.matchedLocation == AppRoutes.onboarding;
+      // The whole `/onboarding/*` subtree (welcome → corner → notify → style)
+      // counts as "in onboarding" — otherwise stepping into a sub-route while
+      // not yet onboarded bounces straight back to the welcome screen.
+      final atOnboarding =
+          state.matchedLocation.startsWith(AppRoutes.onboarding);
       if (!onboarded && !atOnboarding) return AppRoutes.onboarding;
       if (onboarded && atOnboarding) return AppRoutes.home;
       return null;

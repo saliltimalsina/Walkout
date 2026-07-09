@@ -24,6 +24,15 @@ abstract final class AppConstants {
   // Behavior
   static const bool useMockData = true;
 
+  /// Master switch for the Firebase backend. Stays false until
+  /// `flutterfire configure` has wired the project; when false the app reads
+  /// the bundled JSON exactly as before. Flip to true after setup.
+  static const bool firebaseEnabled = true;
+
+  /// FCM topic every device subscribes to; the dashboard's publish fan-out
+  /// pushes a silent "data_changed" message here to refresh widgets.
+  static const String fcmTopic = 'walkout_data';
+
   /// Dev flag: when true the app always cold-starts on the onboarding screen
   /// and the persisted onboarding gate is bypassed. Flip to false for the real
   /// "show onboarding once" behavior.

@@ -31,6 +31,7 @@ class HomeWidgetService {
           DateTime.now().add(Duration(hours: storage.widgetTimeOffsetHours));
       await _refreshLiving(dataset, favorites, now);
       await _refreshBoard(dataset, favorites, now);
+      await _refreshConfigured(dataset, now);
     } catch (e, st) {
       // Widget refresh must never take the app down. Next foreground retries.
       debugPrint('[widgets] refresh FAILED: $e\n$st');
@@ -121,6 +122,59 @@ class HomeWidgetService {
     }
   }
 
+  // ── Per-instance configured widgets ────────────────────────────────
+
+  /// Renders any widget the user pointed at a specific fighter through the
+  /// Android config screen. The config Activity stores, in the shared widget
+  /// prefs: `cfg_ids` (comma-joined appWidgetIds), and per id
+  /// `cfg_fighter_<id>` + `cfg_key_<id>`. Each gets its own PNG keyed by id,
+  /// which the provider prefers over the shared face.
+  static Future<void> _refreshConfigured(
+    AppDataset dataset,
+    DateTime now,
+  ) async {
+    final idsRaw = await HomeWidget.getWidgetData<String>('cfg_ids');
+    if (idsRaw == null || idsRaw.isEmpty) return;
+    final ids = idsRaw.split(',').where((e) => e.isNotEmpty).toSet();
+    final byId = dataset.fighterById;
+    final providers = <String>{};
+
+    for (final id in ids) {
+      try {
+        final fighterId =
+            await HomeWidget.getWidgetData<String>('cfg_fighter_$id');
+        final key = await HomeWidget.getWidgetData<String>('cfg_key_$id');
+        if (fighterId == null || key == null) continue;
+        final fighter = byId[fighterId];
+        if (fighter == null) continue;
+        final cfg = FaceRegistry.configurableFace(
+          key: key,
+          fighter: fighter,
+          dataset: dataset,
+          now: now,
+        );
+        if (cfg == null) continue;
+        await _warmAssets(cfg.assets);
+        final path = await WidgetCapture.toPngFile(
+          child: cfg.face,
+          key: '${key}_w${id}_png',
+          logicalSize: cfg.size,
+          pixelRatio: 3,
+        );
+        await HomeWidget.saveWidgetData<String>('${key}_w${id}_png', path);
+        await HomeWidget.saveWidgetData<String>(
+            '${key}_w${id}_deeplink', cfg.deeplink);
+        final provider = FaceRegistry.configurableProviders[key];
+        if (provider != null) providers.add(provider);
+      } catch (e) {
+        debugPrint('[widgets] configured $id FAILED: $e');
+      }
+    }
+    for (final p in providers) {
+      await HomeWidget.updateWidget(qualifiedAndroidName: '$_providerPkg.$p');
+    }
+  }
+
   // ── Asset pre-warming ──────────────────────────────────────────────
 
   /// renderFlutterWidget captures synchronously; async `Image.asset` loads
@@ -167,6 +221,12 @@ class HomeWidgetService {
         return segs.isEmpty ? '/home' : '/fighter/${segs.first}';
       case 'pickem':
         return '/pickem';
+      case 'events':
+        return '/events';
+      case 'rankings':
+        return '/rankings';
+      case 'home':
+        return '/home';
       default:
         return '/home';
     }

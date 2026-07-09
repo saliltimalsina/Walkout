@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "904634100253",
+    "project_id": "walkout-69",
+    "storage_bucket": "walkout-69.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:904634100253:android:1eacfd407b543ef36cf4f4",
+        "android_client_info": {
+          "package_name": "com.walkout.walkout"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZ-DZlNJwind6RQOSPgakj2mA9pOYgGZo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

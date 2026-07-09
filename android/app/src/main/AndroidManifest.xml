@@ -25,6 +25,15 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Fighter picker shown when a configurable widget is added. -->
+        <activity
+            android:name=".WidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/NormalTheme">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
         <!-- Home-screen widgets -->
         <receiver
             android:name=".widgets.FaceoffWidgetProvider"
@@ -202,6 +211,39 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_prediction_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.NewsWidgetProvider"
+            android:exported="true"
+            android:label="Latest News">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_news_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.UpcomingWidgetProvider"
+            android:exported="true"
+            android:label="Upcoming Events">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_upcoming_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.FightWeekWidgetProvider"
+            android:exported="true"
+            android:label="Fight Week">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_fightweek_info" />
         </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

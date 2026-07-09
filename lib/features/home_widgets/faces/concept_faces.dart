@@ -36,67 +36,149 @@ String _shortDate(DateTime d) {
 String _eventTag(Event e) =>
     (e.eventType.isNotEmpty ? e.eventType : e.name).toUpperCase();
 
+const _weekdays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
+/// "SAT · JUN 15" — weekday + short date for the countdown face.
+String _fightClockDate(DateTime d) =>
+    '${_weekdays[d.weekday - 1]} · ${_shortDate(d)}';
+
 // ── 1 · FIGHT CLOCK (4x2) ────────────────────────────────────────────
 
 class FightClockFace extends StatelessWidget {
-  const FightClockFace({super.key, required this.event, required this.now});
+  const FightClockFace({
+    super.key,
+    required this.event,
+    required this.now,
+    this.red,
+    this.blue,
+  });
   final Event event;
   final DateTime now;
+
+  /// Main-event corners. When both are present the face renders as a poster
+  /// with two fighter cutouts + a big `RED VS BLUE`; otherwise it degrades to
+  /// the event subtitle so fallback usages keep working.
+  final Fighter? red;
+  final Fighter? blue;
 
   @override
   Widget build(BuildContext context) {
     final diff = event.date.difference(now);
     final days = diff.inDays;
     final hours = diff.inHours % 24;
-    final parts = event.subtitle.split(RegExp(r'\s+vs\.?\s+',
-        caseSensitive: false));
-    return FaceKit.scaffold(
-      auraCenter: const Alignment(-0.9, -0.6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(_eventTag(event), style: FaceKit.over(9, FaceKit.brand)),
-                const SizedBox(height: 6),
-                for (final p in parts.take(2))
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(p.trim().toUpperCase(),
-                        style: FaceKit.anton(26)),
-                  ),
-                const SizedBox(height: 6),
-                Text(
-                  '${_shortDate(event.date)}${event.venue.isEmpty ? '' : ' · ${event.venue.toUpperCase()}'}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: FaceKit.meta(8.5, FaceKit.t2),
-                ),
-              ],
-            ),
+    final mins = diff.inMinutes % 60;
+    final fightWeek = !diff.isNegative && diff.inDays <= 7;
+    final hasPortraits = (red?.imageUrl.isNotEmpty ?? false) &&
+        (blue?.imageUrl.isNotEmpty ?? false);
+
+    final title = hasPortraits
+        ? '${FaceKit.lastName(red!.name)}  VS  ${FaceKit.lastName(blue!.name)}'
+        : event.subtitle.toUpperCase();
+
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [FaceKit.bg, FaceKit.bgDeep],
           ),
-          Container(
-            width: 1,
-            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-            color: FaceKit.line,
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('$days', style: FaceKit.anton(52, c: FaceKit.white)),
-              Text(days == 1 ? 'DAY' : 'DAYS',
-                  style: FaceKit.over(9, FaceKit.brand)),
-              const SizedBox(height: 3),
-              Text('+ ${hours}H', style: FaceKit.meta(8, FaceKit.t3)),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (hasPortraits) ...[
+              FaceKit.sideCutout(red!.imageUrl,
+                  right: false,
+                  width: 92,
+                  imageAlign: const Alignment(-0.1, -0.85)),
+              FaceKit.sideCutout(blue!.imageUrl,
+                  right: true,
+                  width: 92,
+                  imageAlign: const Alignment(0.1, -0.85)),
             ],
-          ),
-        ],
+            // Center readability wash.
+            const Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.center,
+                    radius: 0.9,
+                    colors: [Color(0xE6000000), Color(0x66000000)],
+                    stops: [0.45, 1.0],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(_eventTag(event),
+                      style: FaceKit.over(9, FaceKit.brand)),
+                  if (hasPortraits)
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: FaceKit.dualName(
+                          FaceKit.lastName(red!.name),
+                          FaceKit.lastName(blue!.name),
+                          size: 27),
+                    )
+                  else
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(title,
+                          textAlign: TextAlign.center,
+                          style: FaceKit.anton(27)),
+                    ),
+                  // Countdown strip.
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _unit('${days < 0 ? 0 : days}', days == 1 ? 'DAY' : 'DAYS'),
+                      const SizedBox(width: 22),
+                      _unit('$hours', 'HRS'),
+                      const SizedBox(width: 22),
+                      _unit('$mins', 'MINS'),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (fightWeek) ...[
+                        FaceKit.pill('FIGHT WEEK', fontSize: 7),
+                        const SizedBox(width: 7),
+                      ],
+                      Flexible(
+                        child: Text(
+                          _fightClockDate(event.date),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: FaceKit.meta(8.5, FaceKit.t2),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  Widget _unit(String value, String label) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(value, style: FaceKit.anton(30)),
+          Text(label, style: FaceKit.over(7.5, FaceKit.brand, ls: 1.2)),
+        ],
+      );
 }
 
 // ── 2 · YOUR CORNER (4x2) ────────────────────────────────────────────
@@ -243,55 +325,86 @@ class Last5Face extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       auraAlpha: 0.18,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('LAST 5', style: FaceKit.over(8, FaceKit.t3)),
           const SizedBox(height: 2),
           FittedBox(
             fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
             child: Text(FaceKit.lastName(fighter.name),
                 style: FaceKit.anton(22)),
           ),
-          const SizedBox(height: 10),
+          const Spacer(),
           Row(
             children: [
               for (final r in slots) ...[
-                Expanded(
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: Container(
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
-                        color: r.isEmpty
-                            ? const Color(0x0DFFFFFF)
-                            : _c[r]!.withValues(alpha: 0.16),
-                        border: Border.all(
-                          color: r.isEmpty
-                              ? FaceKit.line
-                              : _c[r]!.withValues(alpha: 0.7),
-                          width: 0.9,
-                        ),
-                      ),
-                      child: Text(r,
-                          style: FaceKit.over(11, r.isEmpty
-                              ? FaceKit.t3
-                              : _c[r]!, ls: 0)),
-                    ),
-                  ),
-                ),
-                if (r != slots.last) const SizedBox(width: 5),
+                Expanded(child: _badge(r)),
+                if (r != slots.last) const SizedBox(width: 6),
               ],
             ],
           ),
-          const SizedBox(height: 10),
-          Text('PRO ${fighter.record.display}',
-              style: FaceKit.meta(8, FaceKit.t2)),
+          const Spacer(),
+          FaceKit.rule(),
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              _finish('KO', fighter.winsByKo, FaceKit.brand),
+              _finish('SUB', fighter.winsBySub, FaceKit.gold),
+              _finish('DEC', fighter.winsByDec, FaceKit.t2),
+            ],
+          ),
         ],
       ),
     );
   }
+
+  Widget _badge(String r) {
+    final filled = r.isNotEmpty;
+    final c = _c[r] ?? FaceKit.t3;
+    return AspectRatio(
+      aspectRatio: 1,
+      child: Container(
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: filled ? c : const Color(0x0DFFFFFF),
+          border: Border.all(
+            color: filled ? c : FaceKit.line,
+            width: 1,
+          ),
+          boxShadow: filled
+              ? [BoxShadow(color: c.withValues(alpha: 0.45), blurRadius: 7)]
+              : null,
+        ),
+        child: Text(r,
+            style: FaceKit.over(
+                11, filled ? FaceKit.white : FaceKit.t3,
+                ls: 0)),
+      ),
+    );
+  }
+
+  Widget _finish(String label, int n, Color c) => Expanded(
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                    width: 6,
+                    height: 6,
+                    decoration:
+                        BoxDecoration(shape: BoxShape.circle, color: c)),
+                const SizedBox(width: 4),
+                Text('$n', style: FaceKit.anton(15)),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(label, style: FaceKit.over(7, FaceKit.t3, ls: 1)),
+          ],
+        ),
+      );
 }
 
 // ── 6 · TALE OF THE TAPE (4x2) ───────────────────────────────────────
@@ -304,45 +417,39 @@ class TapeFace extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String cm(int v) => v == 0 ? '—' : '$v CM';
+    String age(int v) => v == 0 ? '—' : '$v';
     final rows = <(String, String, String)>[
-      (red.record.display, 'RECORD', blue.record.display),
       (cm(red.heightCm), 'HEIGHT', cm(blue.heightCm)),
       (cm(red.reachCm), 'REACH', cm(blue.reachCm)),
+      (age(red.age), 'AGE', age(blue.age)),
       (red.stance.toUpperCase(), 'STANCE', blue.stance.toUpperCase()),
     ];
     return FaceKit.scaffold(
       auraCenter: Alignment.topCenter,
-      auraAlpha: 0.22,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      auraAlpha: 0.2,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(FaceKit.lastName(red.name),
-                      style: FaceKit.anton(20)),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: FaceKit.glowVs(13),
-              ),
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: Text(FaceKit.lastName(blue.name),
-                      style: FaceKit.anton(20)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 7),
-          FaceKit.rule(),
+          // Head band: two photo heads with names + a glowing VS between.
           Expanded(
+            flex: 46,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _head(red)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Center(child: FaceKit.glowVs(15)),
+                ),
+                Expanded(child: _head(blue)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          FaceKit.rule(),
+          const SizedBox(height: 2),
+          Expanded(
+            flex: 54,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -351,12 +458,16 @@ class TapeFace extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(l,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: FaceKit.meta(10, FaceKit.white)),
                       ),
                       Text(label, style: FaceKit.over(7.5, FaceKit.t3)),
                       Expanded(
                         child: Text(r,
                             textAlign: TextAlign.right,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: FaceKit.meta(10, FaceKit.white)),
                       ),
                     ],
@@ -366,6 +477,38 @@ class TapeFace extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _head(Fighter f) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: FaceKit.line),
+              color: FaceKit.bgDeep,
+            ),
+            child: f.imageUrl.isEmpty
+                ? Center(
+                    child: Text(FaceKit.lastName(f.name)[0],
+                        style: FaceKit.anton(20, c: FaceKit.t3)))
+                : Image.asset(f.imageUrl,
+                    fit: BoxFit.cover,
+                    alignment: const Alignment(0, -0.7),
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+          ),
+        ),
+        const SizedBox(height: 4),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(FaceKit.lastName(f.name),
+              style: FaceKit.over(9, FaceKit.white, ls: 0.6)),
+        ),
+      ],
     );
   }
 }

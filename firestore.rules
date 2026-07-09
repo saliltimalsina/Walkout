@@ -1,0 +1,12 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Phone app + dashboard read everything. Writes only from an admin (the
+    // dashboard signs in a user carrying the `admin` custom claim). The seed
+    // script and Cloud Functions use the Admin SDK, which bypasses these rules.
+    match /{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+  }
+}

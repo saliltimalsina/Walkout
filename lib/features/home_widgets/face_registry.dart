@@ -5,6 +5,7 @@ import 'package:walkout/shared/models/models.dart';
 
 import 'faces/concept_faces.dart';
 import 'faces/faceoff_face.dart';
+import 'faces/feed_faces.dart';
 
 /// One renderable home-screen widget face: what to draw, at which logical
 /// size, where a tap lands, and which assets must be warm before capture.
@@ -94,6 +95,11 @@ abstract final class FaceRegistry {
     final redName = red?.name ?? bout.redName;
     final blueName = blue?.name ?? bout.blueName;
 
+    // Next-event main-event corners for the Fight Clock poster.
+    final nextMain = nextEvent.mainEvent;
+    final nextRed = nextMain != null ? byId[nextMain.redCornerId] : null;
+    final nextBlue = nextMain != null ? byId[nextMain.blueCornerId] : null;
+
     // Real fight history from the bundled past events, newest first.
     List<String> historyOf(String fighterId) {
       final out = <String>[];
@@ -170,13 +176,75 @@ abstract final class FaceRegistry {
     String eventLink(Event e) => 'walkout://event/${e.id}';
     final heroLink = 'walkout://fighter/${hero.id}';
 
+    String tagOf(Event e) =>
+        (e.eventType.isNotEmpty ? e.eventType : e.name).toUpperCase();
+    String lastNameOf(String n) => n.trim().split(RegExp(r'\s+')).last;
+
+    // News — mirrors the in-app "Latest Stories": featured event + champions.
+    final champsList = champions.toList();
+    final newsItems = <NewsItem>[
+      NewsItem(
+        image: nextEvent.heroImage,
+        title: '${nextEvent.subtitle} faceoffs: intensity at its peak',
+        time: '3h ago',
+      ),
+      if (champsList.isNotEmpty)
+        NewsItem(
+          image: champsList[0].imageUrl,
+          title: "Behind the scenes of ${lastNameOf(champsList[0].name)}'s camp",
+          time: '5h ago',
+        ),
+      if (champsList.length > 1)
+        NewsItem(
+          image: champsList[1].imageUrl,
+          title: '${lastNameOf(champsList[1].name)} in the spotlight',
+          time: '7h ago',
+        ),
+    ];
+
+    // Upcoming fight cards, soonest first.
+    final upcomingItems = [
+      for (final e in upcoming.take(3))
+        UpcomingItem(
+          tag: tagOf(e),
+          subtitle: e.subtitle,
+          date: e.date,
+          daysAway: e.date.difference(now).inDays,
+        ),
+    ];
+
+    // Fight-week schedule — typical UFC cadence derived from the event date.
+    String clock(DateTime d) {
+      final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
+      final m = d.minute.toString().padLeft(2, '0');
+      return '$h:$m ${d.hour < 12 ? 'AM' : 'PM'}';
+    }
+
+    final mainCardAt = nextEvent.date;
+    final prelimsAt = mainCardAt.subtract(const Duration(hours: 2));
+    final weighInAt = DateTime(
+      mainCardAt.year,
+      mainCardAt.month,
+      mainCardAt.day,
+      18,
+    ).subtract(const Duration(days: 1));
+    final fightWeekSessions = [
+      ScheduleSession(
+          label: 'CEREMONIAL WEIGH-IN', time: clock(weighInAt), at: weighInAt),
+      ScheduleSession(label: 'PRELIMS', time: clock(prelimsAt), at: prelimsAt),
+      ScheduleSession(
+          label: 'MAIN CARD', time: clock(mainCardAt), at: mainCardAt),
+    ];
+
     return [
       FaceSpec(
         key: 'fight_clock',
         providerClass: 'FightClockWidgetProvider',
         size: four2,
         deeplink: eventLink(nextEvent),
-        face: FightClockFace(event: nextEvent, now: now),
+        face: FightClockFace(
+            event: nextEvent, now: now, red: nextRed, blue: nextBlue),
+        assets: [nextRed?.imageUrl ?? '', nextBlue?.imageUrl ?? ''],
       ),
       FaceSpec(
         key: 'corner',
@@ -222,6 +290,7 @@ abstract final class FaceRegistry {
         face: (red != null && blue != null)
             ? TapeFace(red: red, blue: blue)
             : FightClockFace(event: boutEvent, now: now),
+        assets: [red?.imageUrl ?? '', blue?.imageUrl ?? ''],
       ),
       FaceSpec(
         key: 'belts',
@@ -295,6 +364,137 @@ abstract final class FaceRegistry {
           blueName: blueName,
         ),
       ),
+      FaceSpec(
+        key: 'news',
+        providerClass: 'NewsWidgetProvider',
+        size: four2,
+        deeplink: 'walkout://home',
+        face: NewsFace(items: newsItems),
+        assets: [
+          nextEvent.heroImage,
+          for (final c in champsList.take(2)) c.imageUrl,
+        ],
+      ),
+      FaceSpec(
+        key: 'upcoming',
+        providerClass: 'UpcomingWidgetProvider',
+        size: four2,
+        deeplink: 'walkout://events',
+        face: UpcomingFace(items: upcomingItems),
+      ),
+      FaceSpec(
+        key: 'fightweek',
+        providerClass: 'FightWeekWidgetProvider',
+        size: four2,
+        deeplink: eventLink(nextEvent),
+        face: FightWeekScheduleFace(
+          eventTag: tagOf(nextEvent),
+          sessions: fightWeekSessions,
+          now: now,
+        ),
+      ),
     ];
+  }
+
+  /// Fighter-subject widget keys the user can point at any fighter via the
+  /// Android widget-config screen.
+  static const configurableKeys = {
+    'belts',
+    'momentum',
+    'finish_dna',
+    'radar',
+    'last5',
+    'journey',
+  };
+
+  /// Face key → Android provider class, for the configurable widgets.
+  static const configurableProviders = {
+    'belts': 'BeltsWidgetProvider',
+    'momentum': 'MomentumWidgetProvider',
+    'finish_dna': 'FinishDnaWidgetProvider',
+    'radar': 'RadarWidgetProvider',
+    'last5': 'Last5WidgetProvider',
+    'journey': 'JourneyWidgetProvider',
+  };
+
+  /// Builds a single configurable face for [key] pointed at [fighter]. Returns
+  /// null for unknown keys. Used to render per-widget-instance PNGs.
+  static ({Widget face, List<String> assets, String deeplink, Size size})?
+      configurableFace({
+    required String key,
+    required Fighter fighter,
+    required AppDataset dataset,
+    required DateTime now,
+  }) {
+    final events = [...dataset.events]
+      ..sort((a, b) => a.date.compareTo(b.date));
+    List<String> historyOf(String fighterId) {
+      final out = <String>[];
+      for (final e in events.reversed) {
+        if (e.status != EventStatus.past) continue;
+        for (final b in [...e.mainCard, ...e.prelims]) {
+          if (b.winnerId == null) continue;
+          if (b.redCornerId == fighterId || b.blueCornerId == fighterId) {
+            out.add(b.winnerId == fighterId ? 'W' : 'L');
+          }
+        }
+      }
+      return out;
+    }
+
+    final hist = historyOf(fighter.id);
+    var streak = 0;
+    for (final r in hist) {
+      if (r != 'W') break;
+      streak++;
+    }
+    final link = 'walkout://fighter/${fighter.id}';
+
+    switch (key) {
+      case 'belts':
+        return (
+          face: BeltsFace(champ: fighter),
+          assets: [fighter.imageUrl],
+          deeplink: link,
+          size: two2,
+        );
+      case 'momentum':
+        return (
+          face: MomentumFace(fighter: fighter, streak: streak),
+          assets: const <String>[],
+          deeplink: link,
+          size: two2,
+        );
+      case 'finish_dna':
+        return (
+          face: FinishDnaFace(fighter: fighter),
+          assets: const <String>[],
+          deeplink: link,
+          size: two2,
+        );
+      case 'radar':
+        return (
+          face: RadarFace(fighter: fighter),
+          assets: const <String>[],
+          deeplink: link,
+          size: two2,
+        );
+      case 'last5':
+        return (
+          face: Last5Face(fighter: fighter, results: hist),
+          assets: const <String>[],
+          deeplink: link,
+          size: two2,
+        );
+      case 'journey':
+        return (
+          face: JourneyFace(fighter: fighter),
+          assets: const <String>[],
+          deeplink: link,
+          size: four2,
+        );
+      default:
+        return null;
+    }
   }
 }

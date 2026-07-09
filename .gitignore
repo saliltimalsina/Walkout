@@ -49,3 +49,11 @@ tools/ufc_scraper/output/
 
 # Widget face render output (review artifacts)
 test/_faces/
+
+# Firebase service account key (never commit)
+tools/seed/sa.json
+node_modules/
+dashboard/.next/
+dashboard/out/
+.env.local
+functions/lib/

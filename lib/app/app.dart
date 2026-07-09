@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
@@ -8,8 +9,10 @@ import 'package:responsive_framework/responsive_framework.dart';
 import '../core/constants/app_constants.dart';
 import '../core/providers/app_providers.dart';
 import '../core/router/app_router.dart';
+import '../core/services/firebase_bootstrap.dart';
 import '../core/theme/app_theme.dart';
 import '../features/home_widgets/home_widget_service.dart';
+import '../shared/data/app_dataset.dart';
 import '../shared/providers/favorites_controller.dart';
 
 /// Root application widget. Wires the router, light/dark themes, the persisted
@@ -48,6 +51,15 @@ class _WalkoutAppState extends ConsumerState<WalkoutApp> {
     ref.listenManual(favoritesProvider, (_, __) {
       unawaited(HomeWidgetService.refresh(storage));
     });
+
+    // Dashboard publish → data-changed push while the app is open: drop the
+    // cached dataset and re-render widgets with the latest Firestore data.
+    if (AppConstants.firebaseEnabled && FirebaseBootstrap.isReady) {
+      FirebaseMessaging.onMessage.listen((_) {
+        AppDataset.reset();
+        unawaited(HomeWidgetService.refresh(storage));
+      });
+    }
   }
 
   @override

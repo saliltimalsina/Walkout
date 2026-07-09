@@ -56,6 +56,33 @@ abstract final class FaceKit {
         ),
       );
 
+  /// `RED VS BLUE` on one line, the VS glowing brand-red. Both names Anton.
+  static Widget dualName(String red, String blue, {double size = 26}) =>
+      Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(text: red),
+            TextSpan(
+              text: '  VS  ',
+              style: TextStyle(
+                fontSize: size * 0.6,
+                color: brand,
+                shadows: const [Shadow(color: brand, blurRadius: 14)],
+              ),
+            ),
+            TextSpan(text: blue),
+          ],
+        ),
+        maxLines: 1,
+        style: TextStyle(
+          fontFamily: 'Anton',
+          fontSize: size,
+          height: 1.05,
+          letterSpacing: 0.5,
+          color: white,
+        ),
+      );
+
   /// Card shell: diagonal near-black gradient + tinted radial aura + padding.
   static Widget scaffold({
     required Widget child,
@@ -148,6 +175,61 @@ abstract final class FaceKit {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  /// A single fighter cutout bleeding off one side, its inner edge faded into
+  /// the card. Use as a background layer under text. No `Opacity`/`ShaderMask`
+  /// (they force a saveLayer that the offscreen capture can't flush cleanly) —
+  /// dimming is done with a flat [scrim] overlay instead.
+  static Widget sideCutout(
+    String asset, {
+    bool right = true,
+    double width = 130,
+    Alignment imageAlign = const Alignment(0, -0.82),
+    int scrim = 0x00000000,
+    bool bottomScrim = true,
+  }) {
+    if (asset.isEmpty) return const SizedBox.shrink();
+    return Align(
+      alignment: right ? Alignment.centerRight : Alignment.centerLeft,
+      child: SizedBox(
+        width: width,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              asset,
+              fit: BoxFit.cover,
+              alignment: imageAlign,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+            // Fade the inner edge into the card.
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: right ? Alignment.centerRight : Alignment.centerLeft,
+                  end: right ? Alignment.centerLeft : Alignment.centerRight,
+                  colors: const [Color(0x00000000), bgDeep],
+                  stops: const [0.38, 1.0],
+                ),
+              ),
+            ),
+            if (bottomScrim)
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0x00000000), Color(0x99000000)],
+                    stops: [0.45, 1.0],
+                  ),
+                ),
+              ),
+            if (scrim != 0) ColoredBox(color: Color(scrim)),
+          ],
+        ),
       ),
     );
   }

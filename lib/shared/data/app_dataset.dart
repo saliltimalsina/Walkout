@@ -1,15 +1,19 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
+import '../../core/services/firebase_bootstrap.dart';
 import '../models/event.dart';
 import '../models/fighter.dart';
 import '../models/ranking.dart';
 
-/// Loads the bundled, scraped dataset (fighters, rankings, events) from JSON
-/// assets and caches it. This is the real-data source backing every repository.
+/// Loads the dataset (fighters, rankings, events) and caches it. Source is
+/// Firestore when the backend is live, else the bundled scraped JSON. Firestore
+/// failures fall back to bundled so the app is never dataless.
 class AppDataset {
-  AppDataset._(this.fighters, this.rankings, this.events)
+  AppDataset._(this.fighters, this.rankings, this.events, this.source)
       : fighterById = {for (final f in fighters) f.id: f};
 
   final List<Fighter> fighters;
@@ -17,28 +21,82 @@ class AppDataset {
   final List<Event> events;
   final Map<String, Fighter> fighterById;
 
+  /// 'firestore' or 'bundled' — useful for debugging / a dashboard badge.
+  final String source;
+
   static AppDataset? _instance;
 
   static Future<AppDataset> load() async {
     final cached = _instance;
     if (cached != null) return cached;
 
+    if (FirebaseBootstrap.isReady) {
+      try {
+        return _instance = await _loadRemote();
+      } catch (e) {
+        debugPrint('[dataset] remote load failed, using bundled: $e');
+      }
+    }
+    return _instance = await _loadBundled();
+  }
+
+  /// Drops the cache so the next [load] re-reads (used on a data-changed push).
+  static void reset() => _instance = null;
+
+  static Future<AppDataset> _loadBundled() async {
     final results = await Future.wait([
       rootBundle.loadString('assets/data/fighters.json'),
       rootBundle.loadString('assets/data/rankings.json'),
       rootBundle.loadString('assets/data/events.json'),
     ]);
+    return AppDataset._(
+      (json.decode(results[0]) as List)
+          .map((e) => Fighter.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      (json.decode(results[1]) as List)
+          .map((e) => DivisionRanking.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      (json.decode(results[2]) as List)
+          .map((e) => Event.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      'bundled',
+    );
+  }
 
-    final fighters = (json.decode(results[0]) as List)
-        .map((e) => Fighter.fromJson(e as Map<String, dynamic>))
+  static Future<AppDataset> _loadRemote() async {
+    final db = FirebaseFirestore.instance;
+    final results = await Future.wait([
+      db.collection('fighters').get(),
+      db.collection('rankings').get(),
+      db.collection('events').get(),
+    ]);
+    // Docs are stored in the same shape as the bundled JSON, so fromJson maps
+    // straight across (seed script guarantees this contract).
+    final fighters = results[0]
+        .docs
+        .map((d) => Fighter.fromJson(_normalize(d.data())))
         .toList();
-    final rankings = (json.decode(results[1]) as List)
-        .map((e) => DivisionRanking.fromJson(e as Map<String, dynamic>))
+    final rankings = results[1]
+        .docs
+        .map((d) => DivisionRanking.fromJson(_normalize(d.data())))
         .toList();
-    final events = (json.decode(results[2]) as List)
-        .map((e) => Event.fromJson(e as Map<String, dynamic>))
+    final events = results[2]
+        .docs
+        .map((d) => Event.fromJson(_normalize(d.data())))
         .toList();
+    if (fighters.isEmpty || events.isEmpty) {
+      throw StateError('firestore returned empty collections');
+    }
+    return AppDataset._(fighters, rankings, events, 'firestore');
+  }
 
-    return _instance = AppDataset._(fighters, rankings, events);
+  /// Firestore hands back `Timestamp` for date fields; the models expect ISO
+  /// strings. Coerce any Timestamp to ISO-8601 so fromJson stays unchanged.
+  static Map<String, dynamic> _normalize(Map<String, dynamic> data) {
+    final out = <String, dynamic>{};
+    data.forEach((k, v) {
+      out[k] = v is Timestamp ? v.toDate().toIso8601String() : v;
+    });
+    return out;
   }
 }

@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:path_drawing/path_drawing.dart';
 
 import 'package:walkout/core/constants/app_constants.dart';
+import 'package:walkout/core/router/app_router.dart';
 import 'package:walkout/core/router/app_routes.dart';
 
 /// "The Walk Begins" — cinematic splash.
@@ -45,6 +46,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       if (!mounted) return;
       await _fadeOut.forward();
       if (!mounted) return;
+      // A widget tap captured a deep link on cold launch: land on home first
+      // (so back works + the engine is warm), then push the target.
+      final pending = pendingWidgetRoute;
+      pendingWidgetRoute = null;
+      if (pending != null && !AppConstants.alwaysShowOnboarding) {
+        context.go(AppRoutes.home);
+        context.push(pending);
+        return;
+      }
       context.go(
         AppConstants.alwaysShowOnboarding
             ? AppRoutes.onboarding

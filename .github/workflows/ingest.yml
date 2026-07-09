@@ -1,0 +1,30 @@
+name: Walkout ingest
+
+# Free scheduled ingest. GitHub Actions cron floors at ~5 min; 30 min is plenty
+# for UFC data off-event and keeps well inside free minutes. Also run-able by
+# hand from the Actions tab.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: pip install -r tools/ingest/requirements.txt
+      - name: Install Scrapling browser
+        run: python -m scrapling install || true
+      - name: Write service account
+        run: echo "$FIREBASE_SA" > "${RUNNER_TEMP}/sa.json"
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+      - name: Run ingest
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: python tools/ingest/ingest.py
