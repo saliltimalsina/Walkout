@@ -46,3 +46,6 @@ app.*.map.json
 
 # Scraper output cache (derived data, not source)
 tools/ufc_scraper/output/
+
+# Widget face render output (review artifacts)
+test/_faces/
