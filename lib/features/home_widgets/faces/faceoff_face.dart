@@ -31,10 +31,6 @@ class FaceoffFace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final wl = bout.weightLabel.isNotEmpty
-        ? bout.weightLabel
-        : bout.weightClass.label;
-
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Container(
@@ -131,7 +127,9 @@ class FaceoffFace extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 6),
                       child: Text(
-                        result ?? '$wl TITLE FIGHT'.toUpperCase(),
+                        result ??
+                            '${bout.weightClass.label} TITLE FIGHT'
+                                .toUpperCase(),
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 11,
@@ -197,12 +195,32 @@ class FaceoffFace extends StatelessWidget {
     if (f == null || f.imageUrl.isEmpty) {
       return const ColoredBox(color: Color(0xFF161618));
     }
-    return Image.asset(
-      f.imageUrl,
-      fit: BoxFit.cover,
-      alignment: Alignment(alignRight ? 0.2 : -0.2, -0.9),
-      errorBuilder: (_, __, ___) =>
-          const ColoredBox(color: Color(0xFF161618)),
+    // Fade the inner edge into the dark bg with a gradient overlay instead of
+    // a ShaderMask — no saveLayer, so the offscreen widget render is
+    // paint-ready synchronously.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          f.imageUrl,
+          fit: BoxFit.cover,
+          alignment: Alignment(alignRight ? 0.2 : -0.2, -0.9),
+          errorBuilder: (_, __, ___) =>
+              const ColoredBox(color: Color(0xFF161618)),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: alignRight
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+              end: alignRight ? Alignment.centerLeft : Alignment.centerRight,
+              colors: const [Colors.transparent, _bg],
+              stops: const [0.55, 1.0],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

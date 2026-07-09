@@ -81,25 +81,34 @@ class LivingFace extends StatelessWidget {
 
   Widget _portrait(Fighter? f, {Alignment align = Alignment.centerRight}) {
     if (f == null || f.imageUrl.isEmpty) return const SizedBox.shrink();
+    final onLeft = align == Alignment.centerLeft;
+    // Gradient-overlay fade into the bg (not a ShaderMask) so the offscreen
+    // render is paint-ready synchronously.
     return Align(
       alignment: align,
       child: FractionallySizedBox(
         widthFactor: 0.42,
         heightFactor: 1,
-        child: ShaderMask(
-          shaderCallback: (rect) => const LinearGradient(
-            begin: Alignment.centerRight,
-            end: Alignment.centerLeft,
-            colors: [Colors.white, Colors.transparent],
-            stops: [0.55, 1.0],
-          ).createShader(rect),
-          blendMode: BlendMode.dstIn,
-          child: Image.asset(
-            f.imageUrl,
-            fit: BoxFit.cover,
-            alignment: const Alignment(0, -0.8),
-            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-          ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              f.imageUrl,
+              fit: BoxFit.cover,
+              alignment: const Alignment(0, -0.8),
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: onLeft ? Alignment.centerLeft : Alignment.centerRight,
+                  end: onLeft ? Alignment.centerRight : Alignment.centerLeft,
+                  colors: const [Colors.transparent, _bgDeep],
+                  stops: const [0.5, 1.0],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

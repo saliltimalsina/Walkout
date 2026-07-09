@@ -6,7 +6,26 @@ import 'package:walkout/core/theme/app_radius.dart';
 import 'package:walkout/core/theme/app_spacing.dart';
 import 'package:walkout/core/utils/context_extensions.dart';
 import 'package:walkout/features/home_widgets/home_widget_service.dart';
+import 'package:walkout/shared/models/models.dart';
+import 'package:walkout/shared/providers/data_providers.dart';
+import 'package:walkout/shared/providers/favorites_controller.dart';
 import 'package:walkout/shared/widgets/widgets.dart';
+
+/// The date of the soonest upcoming card featuring a favorite fighter — the
+/// horizon the time-travel presets aim at. Null until data loads.
+final _soonestBookedDateProvider = Provider<DateTime?>((ref) {
+  final events = ref.watch(upcomingEventsProvider).valueOrNull ?? const [];
+  final favorites = ref.watch(favoritesProvider);
+  for (final e in events) {
+    for (final b in [...e.mainCard, ...e.prelims]) {
+      if (favorites.contains(b.redCornerId) ||
+          favorites.contains(b.blueCornerId)) {
+        return e.date;
+      }
+    }
+  }
+  return events.firstOrNull?.date;
+});
 
 /// Dev tool: shifts the Living Widget's "now" so every calendar state
 /// (fight week → fight night → result → aftermath) can be demoed against
@@ -24,6 +43,16 @@ class _WidgetTimeTravelCardState extends ConsumerState<WidgetTimeTravelCard> {
       ref.read(storageServiceProvider).widgetTimeOffsetHours;
   bool _busy = false;
 
+  /// Hours to offset "now" so it sits [before] the soonest booked favorite
+  /// card (negative [before] → after the card, for result/aftermath).
+  /// Falls back to a fixed jump if no booking is loaded yet.
+  int _hoursToState(Duration before) {
+    final target = ref.read(_soonestBookedDateProvider);
+    if (target == null) return 24 * 35;
+    final desiredNow = target.subtract(before);
+    return desiredNow.difference(DateTime.now()).inHours;
+  }
+
   Future<void> _apply(int hours) async {
     setState(() {
       _hours = hours;
@@ -40,13 +69,17 @@ class _WidgetTimeTravelCardState extends ConsumerState<WidgetTimeTravelCard> {
     final c = context.colors;
     final t = context.text;
 
+    // The soonest favorite booking sits ~37 days out (UFC 330), so the
+    // interesting Living states live a month ahead. Presets jump straight to
+    // each one; the exact offsets read the real event date at tap time.
     final presets = <(String, int)>[
       ('NOW', 0),
-      ('+1D', 24),
-      ('+2D', 48),
-      ('+3D', 72),
-      ('FIGHT NIGHT', 24 * 3 - 3), // near a card ~3 days out in the dataset
-      ('+7D', 24 * 7),
+      ('BOOKED', 24 * 10),
+      ('FIGHT WEEK', _hoursToState(const Duration(days: 4))),
+      ('WEIGH-IN', _hoursToState(const Duration(hours: 20))),
+      ('FIGHT NIGHT', _hoursToState(const Duration(hours: -1))),
+      ('RESULT', _hoursToState(const Duration(hours: -12))),
+      ('AFTERMATH', _hoursToState(const Duration(hours: -48))),
     ];
 
     return AppCard(

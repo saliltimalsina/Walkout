@@ -1,4 +1,4 @@
-import 'dart:ui' show Size;
+import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:home_widget/home_widget.dart';
@@ -10,6 +10,7 @@ import 'package:walkout/shared/models/models.dart';
 import 'application/living_state.dart';
 import 'faces/faceoff_face.dart';
 import 'faces/living_face.dart';
+import 'widget_capture.dart';
 
 /// Bridges app data to the native home-screen widgets: resolves the subject,
 /// renders faces to PNG and pushes update broadcasts.
@@ -19,23 +20,28 @@ import 'faces/living_face.dart';
 class HomeWidgetService {
   const HomeWidgetService._();
 
-  /// Android provider class names (must match the Kotlin receivers).
-  static const _faceoffProvider = 'FaceoffWidgetProvider';
-  static const _livingProvider = 'LivingWidgetProvider';
+  /// Fully-qualified Android provider names (subpackage `widgets`).
+  static const _faceoffProvider =
+      'com.walkout.walkout.widgets.FaceoffWidgetProvider';
+  static const _livingProvider =
+      'com.walkout.walkout.widgets.LivingWidgetProvider';
 
   /// Renders + publishes all widgets. Cheap when nothing changed — the
   /// heavy part is the offscreen PNG render (~100ms), acceptable on app
   /// foreground.
   static Future<void> refresh(StorageService storage) async {
     try {
+      debugPrint('[widgets] refresh start');
       final dataset = await AppDataset.load();
       final favorites = storage.favoriteFighterIds;
       final now =
           DateTime.now().add(Duration(hours: storage.widgetTimeOffsetHours));
       await _refreshFaceoff(dataset, favorites);
       await _refreshLiving(dataset, favorites, now);
-    } catch (_) {
+      debugPrint('[widgets] refresh done');
+    } catch (e, st) {
       // Widget refresh must never take the app down. Next foreground retries.
+      debugPrint('[widgets] refresh FAILED: $e\n$st');
     }
   }
 
@@ -52,13 +58,18 @@ class HomeWidgetService {
       favorites: favorites,
       fighterById: dataset.fighterById,
     );
+    await _warmAssets([
+      snapshot.fighter?.imageUrl ?? '',
+      snapshot.opponent?.imageUrl ?? '',
+    ]);
 
-    await HomeWidget.renderFlutterWidget(
-      LivingFace(snapshot: snapshot, now: now),
+    final livingPath = await WidgetCapture.toPngFile(
+      child: LivingFace(snapshot: snapshot, now: now),
       key: 'living_png',
       logicalSize: const Size(329, 158),
       pixelRatio: 3,
     );
+    await HomeWidget.saveWidgetData<String>('living_png', livingPath);
 
     // Native chronometer: show inside the final 24h before the main card
     // (fight week / weigh-in / fight night pre-card).
@@ -82,7 +93,7 @@ class HomeWidgetService {
       _ => 'walkout://home',
     };
     await HomeWidget.saveWidgetData<String>('living_deeplink', deeplink);
-    await HomeWidget.updateWidget(androidName: _livingProvider);
+    await HomeWidget.updateWidget(qualifiedAndroidName: _livingProvider);
   }
 
   // ── Face-Off ───────────────────────────────────────────────────────
@@ -96,10 +107,14 @@ class HomeWidgetService {
     final (event, bout, resultLabel) = subject;
 
     final byId = {for (final f in dataset.fighters) f.id: f};
+    await _warmAssets([
+      byId[bout.redCornerId]?.imageUrl ?? '',
+      byId[bout.blueCornerId]?.imageUrl ?? '',
+    ]);
 
     // 4x4 cell ≈ 329x345dp; render 3x for Pixel-class density.
-    await HomeWidget.renderFlutterWidget(
-      FaceoffFace(
+    final path = await WidgetCapture.toPngFile(
+      child: FaceoffFace(
         event: event,
         bout: bout,
         red: byId[bout.redCornerId],
@@ -111,9 +126,10 @@ class HomeWidgetService {
       pixelRatio: 3,
     );
 
+    await HomeWidget.saveWidgetData<String>('faceoff_png', path);
     await HomeWidget.saveWidgetData<String>(
         'faceoff_deeplink', 'walkout://event/${event.id}');
-    await HomeWidget.updateWidget(androidName: _faceoffProvider);
+    await HomeWidget.updateWidget(qualifiedAndroidName: _faceoffProvider);
   }
 
   /// Subject: a corner fighter's upcoming bout when one exists (the poster
@@ -151,6 +167,39 @@ class HomeWidgetService {
       return (past, pastMain, 'FINAL$method');
     }
     return null;
+  }
+
+  // ── Asset pre-warming ──────────────────────────────────────────────
+
+  /// renderFlutterWidget captures synchronously; async `Image.asset` loads
+  /// wouldn't be painted yet (`!debugNeedsPaint` assertion). Resolving the
+  /// asset images to completion here populates the global image cache so the
+  /// faces paint their portraits synchronously during capture.
+  static Future<void> _warmAssets(Iterable<String> assetPaths) async {
+    final futures = <Future<void>>[];
+    for (final path in assetPaths) {
+      if (path.isEmpty) continue;
+      final provider = AssetImage(path);
+      final completer = Completer<void>();
+      final stream = provider.resolve(ImageConfiguration.empty);
+      late final ImageStreamListener listener;
+      listener = ImageStreamListener(
+        (_, __) {
+          if (!completer.isCompleted) completer.complete();
+          stream.removeListener(listener);
+        },
+        onError: (_, __) {
+          if (!completer.isCompleted) completer.complete();
+          stream.removeListener(listener);
+        },
+      );
+      stream.addListener(listener);
+      futures.add(completer.future.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () {},
+      ));
+    }
+    await Future.wait(futures);
   }
 
   // ── Launch / deep links ────────────────────────────────────────────
