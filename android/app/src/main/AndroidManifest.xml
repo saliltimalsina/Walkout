@@ -49,6 +49,160 @@
                 android:resource="@xml/widget_living_info" />
         </receiver>
 
+        <receiver
+            android:name=".widgets.FightClockWidgetProvider"
+            android:exported="true"
+            android:label="Fight Clock">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_fight_clock_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.CornerWidgetProvider"
+            android:exported="true"
+            android:label="Your Corner">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_corner_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.OctagonCountWidgetProvider"
+            android:exported="true"
+            android:label="Octagon Countdown">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_octagon_count_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.Last5WidgetProvider"
+            android:exported="true"
+            android:label="Last 5 Fights">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_last5_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.TapeWidgetProvider"
+            android:exported="true"
+            android:label="Tale of the Tape">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_tape_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.BeltsWidgetProvider"
+            android:exported="true"
+            android:label="Belt Collection">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_belts_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.MomentumWidgetProvider"
+            android:exported="true"
+            android:label="Fight Momentum">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_momentum_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.LadderWidgetProvider"
+            android:exported="true"
+            android:label="Division Ladder">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_ladder_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.TicketWidgetProvider"
+            android:exported="true"
+            android:label="Walkout Card">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_ticket_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.HypeWidgetProvider"
+            android:exported="true"
+            android:label="Hype Pulse">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_hype_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.FinishDnaWidgetProvider"
+            android:exported="true"
+            android:label="Finish DNA">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_finish_dna_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.RadarWidgetProvider"
+            android:exported="true"
+            android:label="Octagon Radar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_radar_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.JourneyWidgetProvider"
+            android:exported="true"
+            android:label="Career Journey">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_journey_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.PredictionWidgetProvider"
+            android:exported="true"
+            android:label="Prediction">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_prediction_info" />
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:walkout/features/home_widgets/application/living_state.dart';
-import 'package:walkout/features/home_widgets/faces/faceoff_face.dart';
+import 'package:walkout/features/home_widgets/face_registry.dart';
 import 'package:walkout/features/home_widgets/faces/living_face.dart';
 import 'package:walkout/shared/data/app_dataset.dart';
 import 'package:walkout/shared/models/models.dart';
@@ -181,11 +181,19 @@ void main() {
           now: booked.date.add(const Duration(hours: 36)),
         ),
         size);
-    await capture(
-        'faceoff',
-        FaceoffFace(event: booked, bout: bout, red: red, blue: blue),
-        const Size(333, 347));
+    // The full concept board, resolved like production (red corner favorited
+    // so the personal faces show a real subject).
+    final specs = FaceRegistry.build(
+      dataset: data,
+      favorites: {red.id},
+      now: DateTime(2026, 7, 9),
+    );
+    for (final spec in specs) {
+      await warm(spec.assets);
+      await capture(spec.key, spec.face, spec.size);
+    }
 
-    expect(Directory('test/_faces').listSync().length, greaterThanOrEqualTo(6));
+    expect(
+        Directory('test/_faces').listSync().length, greaterThanOrEqualTo(20));
   });
 }

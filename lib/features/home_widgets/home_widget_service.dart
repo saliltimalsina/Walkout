@@ -5,26 +5,20 @@ import 'package:home_widget/home_widget.dart';
 
 import 'package:walkout/core/services/storage_service.dart';
 import 'package:walkout/shared/data/app_dataset.dart';
-import 'package:walkout/shared/models/models.dart';
 
 import 'application/living_state.dart';
-import 'faces/faceoff_face.dart';
+import 'face_registry.dart';
 import 'faces/living_face.dart';
 import 'widget_capture.dart';
 
-/// Bridges app data to the native home-screen widgets: resolves the subject,
-/// renders faces to PNG and pushes update broadcasts.
-///
-/// v1 scope: Face-Off (4x4). The Living Widget engine builds on the same
-/// pipeline.
+/// Bridges app data to the native home-screen widgets: resolves subjects,
+/// renders every face on the board to PNG and pushes update broadcasts.
 class HomeWidgetService {
   const HomeWidgetService._();
 
   /// Fully-qualified Android provider names (subpackage `widgets`).
-  static const _faceoffProvider =
-      'com.walkout.walkout.widgets.FaceoffWidgetProvider';
-  static const _livingProvider =
-      'com.walkout.walkout.widgets.LivingWidgetProvider';
+  static const _providerPkg = 'com.walkout.walkout.widgets';
+  static const _livingProvider = '$_providerPkg.LivingWidgetProvider';
 
   /// Renders + publishes all widgets. Cheap when nothing changed — the
   /// heavy part is the offscreen PNG render (~100ms), acceptable on app
@@ -35,8 +29,8 @@ class HomeWidgetService {
       final favorites = storage.favoriteFighterIds;
       final now =
           DateTime.now().add(Duration(hours: storage.widgetTimeOffsetHours));
-      await _refreshFaceoff(dataset, favorites);
       await _refreshLiving(dataset, favorites, now);
+      await _refreshBoard(dataset, favorites, now);
     } catch (e, st) {
       // Widget refresh must never take the app down. Next foreground retries.
       debugPrint('[widgets] refresh FAILED: $e\n$st');
@@ -94,77 +88,37 @@ class HomeWidgetService {
     await HomeWidget.updateWidget(qualifiedAndroidName: _livingProvider);
   }
 
-  // ── Face-Off ───────────────────────────────────────────────────────
+  // ── The board: every concept face ──────────────────────────────────
 
-  static Future<void> _refreshFaceoff(
+  static Future<void> _refreshBoard(
     AppDataset dataset,
     Set<String> favorites,
+    DateTime now,
   ) async {
-    final subject = _resolveFaceoffSubject(dataset, favorites);
-    if (subject == null) return;
-    final (event, bout, resultLabel) = subject;
-
-    final byId = {for (final f in dataset.fighters) f.id: f};
-    await _warmAssets([
-      byId[bout.redCornerId]?.imageUrl ?? '',
-      byId[bout.blueCornerId]?.imageUrl ?? '',
-    ]);
-
-    // 4x4 cell ≈ 329x345dp; render 3x for Pixel-class density.
-    final path = await WidgetCapture.toPngFile(
-      child: FaceoffFace(
-        event: event,
-        bout: bout,
-        red: byId[bout.redCornerId],
-        blue: byId[bout.blueCornerId],
-        result: resultLabel,
-      ),
-      key: 'faceoff_png',
-      logicalSize: const Size(333, 347),
-      pixelRatio: 3,
+    final specs = FaceRegistry.build(
+      dataset: dataset,
+      favorites: favorites,
+      now: now,
     );
-
-    await HomeWidget.saveWidgetData<String>('faceoff_png', path);
-    await HomeWidget.saveWidgetData<String>(
-        'faceoff_deeplink', 'walkout://event/${event.id}');
-    await HomeWidget.updateWidget(qualifiedAndroidName: _faceoffProvider);
-  }
-
-  /// Subject: a corner fighter's upcoming bout when one exists (the poster
-  /// should be personal), else the featured event's main event, else the most
-  /// recent past main event with a FINAL ribbon.
-  static (Event, Bout, String?)? _resolveFaceoffSubject(
-    AppDataset dataset,
-    Set<String> favorites,
-  ) {
-    final events = [...dataset.events]..sort((a, b) => a.date.compareTo(b.date));
-    final upcoming =
-        events.where((e) => e.status != EventStatus.past).toList();
-
-    // Corner fighter's soonest bout.
-    for (final e in upcoming) {
-      for (final b in [...e.mainCard, ...e.prelims]) {
-        if (favorites.contains(b.redCornerId) ||
-            favorites.contains(b.blueCornerId)) {
-          return (e, b, null);
-        }
+    for (final spec in specs) {
+      try {
+        await _warmAssets(spec.assets);
+        final path = await WidgetCapture.toPngFile(
+          child: spec.face,
+          key: '${spec.key}_png',
+          logicalSize: spec.size,
+          pixelRatio: 3,
+        );
+        await HomeWidget.saveWidgetData<String>('${spec.key}_png', path);
+        await HomeWidget.saveWidgetData<String>(
+            '${spec.key}_deeplink', spec.deeplink);
+        await HomeWidget.updateWidget(
+            qualifiedAndroidName: '$_providerPkg.${spec.providerClass}');
+      } catch (e) {
+        // One bad face must not sink the rest of the board.
+        debugPrint('[widgets] ${spec.key} FAILED: $e');
       }
     }
-    // Featured event main event.
-    final featured = upcoming.firstOrNull;
-    final featuredMain = featured?.mainEvent;
-    if (featured != null && featuredMain != null) {
-      return (featured, featuredMain, null);
-    }
-    // Fallback: last past main event with result ribbon.
-    final past = events.where((e) => e.status == EventStatus.past).lastOrNull;
-    final pastMain = past?.mainEvent;
-    if (past != null && pastMain != null) {
-      final method =
-          pastMain.method.isEmpty ? '' : ' · ${pastMain.method.toUpperCase()}';
-      return (past, pastMain, 'FINAL$method');
-    }
-    return null;
   }
 
   // ── Asset pre-warming ──────────────────────────────────────────────

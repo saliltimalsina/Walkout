@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:walkout/shared/models/models.dart';
 
 /// The Face-Off home-screen widget face: two corners edge to edge, met by a
-/// red aura seam — wallpaper-grade poster of the featured fight.
+/// red aura seam — poster of the featured fight, tuned for a 4x2 cell.
 ///
 /// Rendered OFFSCREEN to PNG via home_widget; it must not depend on
 /// MediaQuery/Theme inheritance, so all colors/type come in explicitly.
@@ -82,9 +82,9 @@ class FaceoffFace extends StatelessWidget {
             ),
             // Top overline: event · date (baked, day-granular).
             Positioned(
-              top: 18,
-              left: 20,
-              right: 20,
+              top: 10,
+              left: 14,
+              right: 14,
               child: Row(
                 children: [
                   Expanded(
@@ -95,7 +95,7 @@ class FaceoffFace extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontFamily: 'Inter',
-                        fontSize: 13,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 2,
                         color: _brand,
@@ -106,7 +106,7 @@ class FaceoffFace extends StatelessWidget {
                     _dateLabel(event.date),
                     style: TextStyle(
                       fontFamily: 'Inter',
-                      fontSize: 12,
+                      fontSize: 9,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.5,
                       color: Colors.white.withValues(alpha: 0.7),
@@ -117,24 +117,24 @@ class FaceoffFace extends StatelessWidget {
             ),
             // Name stack + meta.
             Positioned(
-              left: 20,
-              right: 20,
-              bottom: 18,
+              left: 14,
+              right: 14,
+              bottom: 10,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (bout.isTitleFight || result != null)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.only(bottom: 4),
                       child: Text(
                         result ??
                             '${bout.weightClass.label} TITLE FIGHT'
                                 .toUpperCase(),
                         style: TextStyle(
                           fontFamily: 'Inter',
-                          fontSize: 11,
+                          fontSize: 8,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: 2.5,
+                          letterSpacing: 2,
                           color: result != null ? Colors.white : _gold,
                         ),
                       ),
@@ -148,10 +148,10 @@ class FaceoffFace extends StatelessWidget {
                           const TextSpan(
                             text: '  VS  ',
                             style: TextStyle(
-                              fontSize: 22,
+                              fontSize: 15,
                               color: _brand,
                               shadows: [
-                                Shadow(color: _brand, blurRadius: 18),
+                                Shadow(color: _brand, blurRadius: 14),
                               ],
                             ),
                           ),
@@ -161,14 +161,14 @@ class FaceoffFace extends StatelessWidget {
                       maxLines: 1,
                       style: const TextStyle(
                         fontFamily: 'Anton',
-                        fontSize: 40,
+                        fontSize: 26,
                         height: 1.05,
                         letterSpacing: 0.5,
                         color: Colors.white,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     '${_cornerMeta(red, bout.redName)}     ·     '
                     '${_cornerMeta(blue, bout.blueName)}',
@@ -176,7 +176,7 @@ class FaceoffFace extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: 'Inter',
-                      fontSize: 12,
+                      fontSize: 9,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 1,
                       color: Colors.white.withValues(alpha: 0.72),

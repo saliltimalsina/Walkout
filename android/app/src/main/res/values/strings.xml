@@ -2,4 +2,18 @@
 <resources>
     <string name="widget_faceoff_description">Face-Off — poster of the next big fight</string>
     <string name="widget_living_description">The Living Widget — transforms with the fight calendar</string>
+    <string name="widget_fight_clock_description">Fight Clock</string>
+    <string name="widget_corner_description">Your Corner</string>
+    <string name="widget_octagon_count_description">Octagon Countdown</string>
+    <string name="widget_last5_description">Last 5 Fights</string>
+    <string name="widget_tape_description">Tale of the Tape</string>
+    <string name="widget_belts_description">Belt Collection</string>
+    <string name="widget_momentum_description">Fight Momentum</string>
+    <string name="widget_ladder_description">Division Ladder</string>
+    <string name="widget_ticket_description">Walkout Card</string>
+    <string name="widget_hype_description">Hype Pulse</string>
+    <string name="widget_finish_dna_description">Finish DNA</string>
+    <string name="widget_radar_description">Octagon Radar</string>
+    <string name="widget_journey_description">Career Journey</string>
+    <string name="widget_prediction_description">Prediction</string>
 </resources>
