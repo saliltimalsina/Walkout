@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="widget_faceoff_description">Face-Off — poster of the next big fight</string>
+    <string name="widget_living_description">The Living Widget — transforms with the fight calendar</string>
 </resources>

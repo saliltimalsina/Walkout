@@ -15,6 +15,7 @@ abstract final class AppConstants {
   static const String prefsFanStyle = 'prefs.fan_style';
   static const String prefsNotifyEnabled = 'prefs.notify_enabled';
   static const String prefsPickem = 'prefs.pickem_cards';
+  static const String prefsWidgetTimeOffset = 'prefs.widget_time_offset_hours';
   static const String hiveFavoritesBox = 'favorites';
 
   // Layout

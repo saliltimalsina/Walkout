@@ -14,6 +14,7 @@ import '../widgets/profile_header.dart';
 import '../widgets/profile_stats.dart';
 import '../widgets/settings_section.dart';
 import '../widgets/walkout_aura_card.dart';
+import '../widgets/widget_time_travel_card.dart';
 
 /// The signed-in user's profile: identity, prediction stats, favorite
 /// fighters, and app settings.
@@ -49,6 +50,8 @@ class ProfileScreen extends ConsumerWidget {
                   const FavoritesSection(),
                   AppSpacing.vGapXl,
                   const SettingsSection(),
+                  AppSpacing.vGapLg,
+                  const WidgetTimeTravelCard(),
                   AppSpacing.vGapXl,
                   AppButton(
                     label: 'Sign out',

@@ -7,7 +7,9 @@ import 'package:walkout/core/services/storage_service.dart';
 import 'package:walkout/shared/data/app_dataset.dart';
 import 'package:walkout/shared/models/models.dart';
 
+import 'application/living_state.dart';
 import 'faces/faceoff_face.dart';
+import 'faces/living_face.dart';
 
 /// Bridges app data to the native home-screen widgets: resolves the subject,
 /// renders faces to PNG and pushes update broadcasts.
@@ -19,6 +21,7 @@ class HomeWidgetService {
 
   /// Android provider class names (must match the Kotlin receivers).
   static const _faceoffProvider = 'FaceoffWidgetProvider';
+  static const _livingProvider = 'LivingWidgetProvider';
 
   /// Renders + publishes all widgets. Cheap when nothing changed — the
   /// heavy part is the offscreen PNG render (~100ms), acceptable on app
@@ -27,10 +30,59 @@ class HomeWidgetService {
     try {
       final dataset = await AppDataset.load();
       final favorites = storage.favoriteFighterIds;
+      final now =
+          DateTime.now().add(Duration(hours: storage.widgetTimeOffsetHours));
       await _refreshFaceoff(dataset, favorites);
+      await _refreshLiving(dataset, favorites, now);
     } catch (_) {
       // Widget refresh must never take the app down. Next foreground retries.
     }
+  }
+
+  // ── Living Widget ──────────────────────────────────────────────────
+
+  static Future<void> _refreshLiving(
+    AppDataset dataset,
+    Set<String> favorites,
+    DateTime now,
+  ) async {
+    final snapshot = LivingStateMachine.resolve(
+      now: now,
+      events: dataset.events,
+      favorites: favorites,
+      fighterById: dataset.fighterById,
+    );
+
+    await HomeWidget.renderFlutterWidget(
+      LivingFace(snapshot: snapshot, now: now),
+      key: 'living_png',
+      logicalSize: const Size(329, 158),
+      pixelRatio: 3,
+    );
+
+    // Native chronometer: show inside the final 24h before the main card
+    // (fight week / weigh-in / fight night pre-card).
+    final event = snapshot.event;
+    final showChrono = event != null &&
+        (snapshot.state == LivingState.fightWeek ||
+            snapshot.state == LivingState.weighInDay) &&
+        event.date.difference(now) <= const Duration(hours: 24) &&
+        event.date.isAfter(now);
+    // Chronometer base uses elapsedRealtime on the device; ship the target
+    // wall-clock time and let native convert.
+    await HomeWidget.saveWidgetData<bool>('living_show_chrono', showChrono);
+    await HomeWidget.saveWidgetData<int>(
+        'living_target_ms', event?.date.millisecondsSinceEpoch ?? 0);
+
+    final deeplink = switch (snapshot.state) {
+      LivingState.corner when snapshot.fighter != null =>
+        'walkout://fighter/${snapshot.fighter!.id}',
+      LivingState.empty => 'walkout://home',
+      _ when event != null => 'walkout://event/${event.id}',
+      _ => 'walkout://home',
+    };
+    await HomeWidget.saveWidgetData<String>('living_deeplink', deeplink);
+    await HomeWidget.updateWidget(androidName: _livingProvider);
   }
 
   // ── Face-Off ───────────────────────────────────────────────────────
