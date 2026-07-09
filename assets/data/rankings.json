@@ -1,0 +1,893 @@
+[
+  {
+    "weightClass": "flyweight",
+    "championId": "joshua-van",
+    "contenders": [
+      {
+        "fighterId": "alexandre-pantoja",
+        "position": 1,
+        "change": 0
+      },
+      {
+        "fighterId": "manel-kape",
+        "position": 2,
+        "change": 0
+      },
+      {
+        "fighterId": "tatsuro-taira",
+        "position": 3,
+        "change": 0
+      },
+      {
+        "fighterId": "brandon-royval",
+        "position": 4,
+        "change": 0
+      },
+      {
+        "fighterId": "loneer-kavanagh",
+        "position": 5,
+        "change": 0
+      },
+      {
+        "fighterId": "asu-almabayev",
+        "position": 6,
+        "change": 0
+      },
+      {
+        "fighterId": "kyoji-horiguchi",
+        "position": 7,
+        "change": 0
+      },
+      {
+        "fighterId": "amir-albazi",
+        "position": 8,
+        "change": 0
+      },
+      {
+        "fighterId": "brandon-moreno",
+        "position": 9,
+        "change": 0
+      },
+      {
+        "fighterId": "kevin-borjas",
+        "position": 10,
+        "change": 0
+      },
+      {
+        "fighterId": "mitch-raposo",
+        "position": 11,
+        "change": 0
+      },
+      {
+        "fighterId": "sumudaerji",
+        "position": 12,
+        "change": 0
+      },
+      {
+        "fighterId": "steve-erceg",
+        "position": 13,
+        "change": 0
+      },
+      {
+        "fighterId": "alex-perez",
+        "position": 14,
+        "change": 0
+      },
+      {
+        "fighterId": "joseph-morales",
+        "position": 15,
+        "change": 0
+      }
+    ]
+  },
+  {
+    "weightClass": "bantamweight",
+    "championId": "petr-yan",
+    "contenders": [
+      {
+        "fighterId": "merab-dvalishvili",
+        "position": 1,
+        "change": 0
+      },
+      {
+        "fighterId": "umar-nurmagomedov",
+        "position": 2,
+        "change": 0
+      },
+      {
+        "fighterId": "sean-omalley",
+        "position": 3,
+        "change": 0
+      },
+      {
+        "fighterId": "cory-sandhagen",
+        "position": 4,
+        "change": 0
+      },
+      {
+        "fighterId": "mario-bautista",
+        "position": 5,
+        "change": 0
+      },
+      {
+        "fighterId": "song-yadong",
+        "position": 6,
+        "change": 0
+      },
+      {
+        "fighterId": "david-martinez",
+        "position": 7,
+        "change": 0
+      },
+      {
+        "fighterId": "raoni-barcelos",
+        "position": 8,
+        "change": 0
+      },
+      {
+        "fighterId": "marcus-mcghee",
+        "position": 9,
+        "change": 0
+      },
+      {
+        "fighterId": "farid-basharat",
+        "position": 10,
+        "change": 0
+      },
+      {
+        "fighterId": "deiveson-figueiredo",
+        "position": 11,
+        "change": 0
+      },
+      {
+        "fighterId": "aiemann-zahabi",
+        "position": 12,
+        "change": 0
+      },
+      {
+        "fighterId": "charles-jourdain",
+        "position": 13,
+        "change": 0
+      },
+      {
+        "fighterId": "bryce-mitchell",
+        "position": 14,
+        "change": 0
+      },
+      {
+        "fighterId": "montel-jackson",
+        "position": 15,
+        "change": 0
+      }
+    ]
+  },
+  {
+    "weightClass": "featherweight",
+    "championId": "alexander-volkanovski",
+    "contenders": [
+      {
+        "fighterId": "movsar-evloev",
+        "position": 1,
+        "change": 0
+      },
+      {
+        "fighterId": "diego-lopes",
+        "position": 2,
+        "change": 0
+      },
+      {
+        "fighterId": "lerone-murphy",
+        "position": 3,
+        "change": 0
+      },
+      {
+        "fighterId": "aljamain-sterling",
+        "position": 4,
+        "change": 0
+      },
+      {
+        "fighterId": "arnold-allen",
+        "position": 5,
+        "change": 0
+      },
+      {
+        "fighterId": "jean-silva",
+        "position": 6,
+        "change": 0
+      },
+      {
+        "fighterId": "pat-sabatini",
+        "position": 7,
+        "change": 0
+      },
+      {
+        "fighterId": "youssef-zalal",
+        "position": 8,
+        "change": 0
+      },
+      {
+        "fighterId": "nathaniel-wood",
+        "position": 9,
+        "change": 0
+      },
+      {
+        "fighterId": "kevin-vallejos",
+        "position": 10,
+        "change": 0
+      },
+      {
+        "fighterId": "melquizael-costa",
+        "position": 11,
+        "change": 0
+      },
+      {
+        "fighterId": "steve-garcia",
+        "position": 12,
+        "change": 0
+      },
+      {
+        "fighterId": "aaron-pico",
+        "position": 13,
+        "change": 0
+      },
+      {
+        "fighterId": "joanderson-brito",
+        "position": 14,
+        "change": 0
+      },
+      {
+        "fighterId": "jose-miguel-delgado",
+        "position": 15,
+        "change": 0
+      }
+    ]
+  },
+  {
+    "weightClass": "lightweight",
+    "championId": "justin-gaethje",
+    "contenders": [
+      {
+        "fighterId": "ilia-topuria",
+        "position": 1,
+        "change": 0
+      },
+      {
+        "fighterId": "arman-tsarukyan",
+        "position": 2,
+        "change": 0
+      },
+      {
+        "fighterId": "charles-oliveira",
+        "position": 3,
+        "change": 0
+      },
+      {
+        "fighterId": "max-holloway",
+        "position": 4,
+        "change": 0
+      },
+      {
+        "fighterId": "benoit-saint-denis",
+        "position": 5,
+        "change": 0
+      },
+      {
+        "fighterId": "mateusz-gamrot",
+        "position": 6,
+        "change": 0
+      },
+      {
+        "fighterId": "renato-moicano",
+        "position": 7,
+        "change": 0
+      },
+      {
+        "fighterId": "quillan-salkilld",
+        "position": 8,
+        "change": 0
+      },
+      {
+        "fighterId": "paddy-pimblett",
+        "position": 9,
+        "change": 0
+      },
+      {
+        "fighterId": "mauricio-ruffy",
+        "position": 10,
+        "change": 0
+      },
+      {
+        "fighterId": "dan-hooker",
+        "position": 11,
+        "change": 0
+      },
+      {
+        "fighterId": "tom-nolan",
+        "position": 12,
+        "change": 0
+      },
+      {
+        "fighterId": "rafael-fiziev",
+        "position": 13,
+        "change": 0
+      },
+      {
+        "fighterId": "grant-dawson",
+        "position": 14,
+        "change": 0
+      },
+      {
+        "fighterId": "rafa-garcia",
+        "position": 15,
+        "change": 0
+      }
+    ]
+  },
+  {
+    "weightClass": "welterweight",
+    "championId": "islam-makhachev",
+    "contenders": [
+      {
+        "fighterId": "carlos-prates",
+        "position": 1,
+        "change": 0
+      },
+      {
+        "fighterId": "ian-machado-garry",
+        "position": 2,
+        "change": 0
+      },
+      {
+        "fighterId": "michael-morales",
+        "position": 3,
+        "change": 0
+      },
+      {
+        "fighterId": "jack-della-maddalena",
+        "position": 4,
+        "change": 0
+      },
+      {
+        "fighterId": "sean-brady",
+        "position": 5,
+        "change": 0
+      },
+      {
+        "fighterId": "gabriel-bonfim",
+        "position": 6,
+        "change": 0
+      },
+      {
+        "fighterId": "belal-muhammad",
+        "position": 7,
+        "change": 0
+      },
+      {
+        "fighterId": "leon-edwards",
+        "position": 8,
+        "change": 0
+      },
+      {
+        "fighterId": "joaquin-buckley",
+        "position": 9,
+        "change": 0
+      },
+      {
+        "fighterId": "kamaru-usman",
+        "position": 10,
+        "change": 0
+      },
+      {
+        "fighterId": "mike-malott",
+        "position": 11,
+        "change": 0
+      },
+      {
+        "fighterId": "michael-page",
+        "position": 12,
+        "change": 0
+      },
+      {
+        "fighterId": "daniel-rodriguez",
+        "position": 13,
+        "change": 0
+      },
+      {
+        "fighterId": "uros-medic",
+        "position": 14,
+        "change": 0
+      },
+      {
+        "fighterId": "yaroslav-amosov",
+        "position": 15,
+        "change": 0
+      }
+    ]
+  },
+  {
+    "weightClass": "middleweight",
+    "championId": "sean-strickland",
+    "contenders": [
+      {
+        "fighterId": "khamzat-chimaev",
+        "position": 1,
+        "change": 0
+      },
+      {
+        "fighterId": "dricus-du-plessis",
+        "position": 2,
+        "change": 0
+      },
+      {
+        "fighterId": "nassourdine-imavov",
+        "position": 3,
+        "change": 0
+      },
+      {
+        "fighterId": "joe-pyfer",
+        "position": 4,
+        "change": 0
+      },
+      {
+        "fighterId": "brendan-allen",
+        "position": 5,
+        "change": 0
+      },
+      {
+        "fighterId": "caio-borralho",
+        "position": 6,
+        "change": 0
+      },
+      {
+        "fighterId": "anthony-hernandez",
+        "position": 7,
+        "change": 0
+      },
+      {
+        "fighterId": "israel-adesanya",
+        "position": 8,
+        "change": 0
+      },
+      {
+        "fighterId": "gregory-rodrigues",
+        "position": 9,
+        "change": 0
+      },
+      {
+        "fighterId": "ikram-aliskerov",
+        "position": 10,
+        "change": 0
+      },
+      {
+        "fighterId": "jared-cannonier",
+        "position": 11,
+        "change": 0
+      },
+      {
+        "fighterId": "christian-leroy-duncan",
+        "position": 12,
+        "change": 0
+      },
+      {
+        "fighterId": "bo-nickal",
+        "position": 13,
+        "change": 0
+      },
+      {
+        "fighterId": "paulo-costa",
+        "position": 14,
+        "change": 0
+      },
+      {
+        "fighterId": "abus-magomedov",
+        "position": 15,
+        "change": 0
+      }
+    ]
+  },
+  {
+    "weightClass": "lightHeavyweight",
+    "championId": "carlos-ulberg",
+    "contenders": [
+      {
+        "fighterId": "alex-pereira",
+        "position": 1,
+        "change": 0
+      },
+      {
+        "fighterId": "magomed-ankalaev",
+        "position": 2,
+        "change": 0
+      },
+      {
+        "fighterId": "jiri-prochazka",
+        "position": 3,
+        "change": 0
+      },
+      {
+        "fighterId": "paulo-costa",
+        "position": 4,
+        "change": 0
+      },
+      {
+        "fighterId": "jamahal-hill",
+        "position": 5,
+        "change": 0
+      },
+      {
+        "fighterId": "khalil-rountree-jr",
+        "position": 6,
+        "change": 0
+      },
+      {
+        "fighterId": "dominick-reyes",
+        "position": 7,
+        "change": 0
+      },
+      {
+        "fighterId": "volkan-oezdemir",
+        "position": 8,
+        "change": 0
+      },
+      {
+        "fighterId": "azamat-murzakanov",
+        "position": 9,
+        "change": 0
+      },
+      {
+        "fighterId": "bogdan-guskov",
+        "position": 10,
+        "change": 0
+      },
+      {
+        "fighterId": "dustin-jacoby",
+        "position": 11,
+        "change": 0
+      },
+      {
+        "fighterId": "navajo-stirling",
+        "position": 12,
+        "change": 0
+      },
+      {
+        "fighterId": "alonzo-menifield",
+        "position": 13,
+        "change": 0
+      },
+      {
+        "fighterId": "johnny-walker",
+        "position": 14,
+        "change": 0
+      },
+      {
+        "fighterId": "jan-blachowicz",
+        "position": 15,
+        "change": 0
+      }
+    ]
+  },
+  {
+    "weightClass": "heavyweight",
+    "championId": "tom-aspinall",
+    "contenders": [
+      {
+        "fighterId": "ciryl-gane",
+        "position": 1,
+        "change": 0
+      },
+      {
+        "fighterId": "alexander-volkov",
+        "position": 2,
+        "change": 0
+      },
+      {
+        "fighterId": "sergei-pavlovich",
+        "position": 3,
+        "change": 0
+      },
+      {
+        "fighterId": "alex-pereira",
+        "position": 4,
+        "change": 0
+      },
+      {
+        "fighterId": "josh-hokit",
+        "position": 5,
+        "change": 0
+      },
+      {
+        "fighterId": "waldo-cortes-acosta",
+        "position": 6,
+        "change": 0
+      },
+      {
+        "fighterId": "rizvan-kuniev",
+        "position": 7,
+        "change": 0
+      },
+      {
+        "fighterId": "curtis-blaydes",
+        "position": 8,
+        "change": 0
+      },
+      {
+        "fighterId": "serghei-spivac",
+        "position": 9,
+        "change": 0
+      },
+      {
+        "fighterId": "vitor-petrino",
+        "position": 10,
+        "change": 0
+      },
+      {
+        "fighterId": "valter-walker",
+        "position": 11,
+        "change": 0
+      },
+      {
+        "fighterId": "brando-pericic",
+        "position": 12,
+        "change": 0
+      },
+      {
+        "fighterId": "mario-pinto",
+        "position": 13,
+        "change": 0
+      },
+      {
+        "fighterId": "mick-parkin",
+        "position": 14,
+        "change": 0
+      },
+      {
+        "fighterId": "ryan-spann",
+        "position": 15,
+        "change": 0
+      }
+    ]
+  },
+  {
+    "weightClass": "womenStrawweight",
+    "championId": "mackenzie-dern",
+    "contenders": [
+      {
+        "fighterId": "zhang-weili",
+        "position": 1,
+        "change": 0
+      },
+      {
+        "fighterId": "virna-jandiroba",
+        "position": 2,
+        "change": 0
+      },
+      {
+        "fighterId": "tatiana-suarez",
+        "position": 3,
+        "change": 0
+      },
+      {
+        "fighterId": "gillian-robertson",
+        "position": 4,
+        "change": 0
+      },
+      {
+        "fighterId": "xiaonan-yan",
+        "position": 5,
+        "change": 0
+      },
+      {
+        "fighterId": "piera-rodriguez",
+        "position": 6,
+        "change": 0
+      },
+      {
+        "fighterId": "tabatha-ricci",
+        "position": 7,
+        "change": 0
+      },
+      {
+        "fighterId": "denise-gomes",
+        "position": 8,
+        "change": 0
+      },
+      {
+        "fighterId": "mizuki-inoue",
+        "position": 9,
+        "change": 0
+      },
+      {
+        "fighterId": "alexia-thainara",
+        "position": 10,
+        "change": 0
+      },
+      {
+        "fighterId": "amanda-lemos",
+        "position": 11,
+        "change": 0
+      },
+      {
+        "fighterId": "loopy-godinez",
+        "position": 12,
+        "change": 0
+      },
+      {
+        "fighterId": "jaqueline-amorim",
+        "position": 13,
+        "change": 0
+      },
+      {
+        "fighterId": "fatima-kline",
+        "position": 14,
+        "change": 0
+      },
+      {
+        "fighterId": "talita-alencar",
+        "position": 15,
+        "change": 0
+      }
+    ]
+  },
+  {
+    "weightClass": "womenFlyweight",
+    "championId": "valentina-shevchenko",
+    "contenders": [
+      {
+        "fighterId": "natalia-silva",
+        "position": 1,
+        "change": 0
+      },
+      {
+        "fighterId": "manon-fiorot",
+        "position": 2,
+        "change": 0
+      },
+      {
+        "fighterId": "alexa-grasso",
+        "position": 3,
+        "change": 0
+      },
+      {
+        "fighterId": "erin-blanchfield",
+        "position": 4,
+        "change": 0
+      },
+      {
+        "fighterId": "zhang-weili",
+        "position": 5,
+        "change": 0
+      },
+      {
+        "fighterId": "jasmine-jasudavicius",
+        "position": 6,
+        "change": 0
+      },
+      {
+        "fighterId": "rose-namajunas",
+        "position": 7,
+        "change": 0
+      },
+      {
+        "fighterId": "tracy-cortez",
+        "position": 8,
+        "change": 0
+      },
+      {
+        "fighterId": "maycee-barber",
+        "position": 9,
+        "change": 0
+      },
+      {
+        "fighterId": "wang-cong",
+        "position": 10,
+        "change": 0
+      },
+      {
+        "fighterId": "miranda-maverick",
+        "position": 11,
+        "change": 0
+      },
+      {
+        "fighterId": "jj-aldrich",
+        "position": 12,
+        "change": 0
+      },
+      {
+        "fighterId": "karine-silva",
+        "position": 13,
+        "change": 0
+      },
+      {
+        "fighterId": "eduarda-moura",
+        "position": 14,
+        "change": 0
+      },
+      {
+        "fighterId": "casey-oneill",
+        "position": 15,
+        "change": 0
+      }
+    ]
+  },
+  {
+    "weightClass": "womenBantamweight",
+    "championId": "kayla-harrison",
+    "contenders": [
+      {
+        "fighterId": "joselyne-edwards",
+        "position": 1,
+        "change": 0
+      },
+      {
+        "fighterId": "norma-dumont",
+        "position": 2,
+        "change": 0
+      },
+      {
+        "fighterId": "luana-santos",
+        "position": 3,
+        "change": 0
+      },
+      {
+        "fighterId": "julianna-pena",
+        "position": 4,
+        "change": 0
+      },
+      {
+        "fighterId": "ailin-perez",
+        "position": 5,
+        "change": 0
+      },
+      {
+        "fighterId": "yana-santos",
+        "position": 6,
+        "change": 0
+      },
+      {
+        "fighterId": "jacqueline-cavalcanti",
+        "position": 7,
+        "change": 0
+      },
+      {
+        "fighterId": "michelle-montague",
+        "position": 8,
+        "change": 0
+      },
+      {
+        "fighterId": "melissa-croden",
+        "position": 9,
+        "change": 0
+      },
+      {
+        "fighterId": "karol-rosa",
+        "position": 10,
+        "change": 0
+      },
+      {
+        "fighterId": "bia-mesquita",
+        "position": 11,
+        "change": 0
+      },
+      {
+        "fighterId": "irene-aldana",
+        "position": 12,
+        "change": 0
+      },
+      {
+        "fighterId": "macy-chiasson",
+        "position": 13,
+        "change": 0
+      },
+      {
+        "fighterId": "dariya-zheleznyakova",
+        "position": 14,
+        "change": 0
+      },
+      {
+        "fighterId": "raquel-pennington",
+        "position": 15,
+        "change": 0
+      }
+    ]
+  }
+]

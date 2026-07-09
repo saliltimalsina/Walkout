@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Animated system-splash icon: the doorway of light fades in and grows
+     the moment the app is tapped, while the Flutter engine boots. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/splash_door_vector">
+    <target
+        android:name="slab"
+        android:animation="@animator/splash_door_alpha" />
+    <target
+        android:name="door"
+        android:animation="@animator/splash_door_grow" />
+</animated-vector>

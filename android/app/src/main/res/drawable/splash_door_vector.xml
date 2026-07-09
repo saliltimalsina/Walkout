@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The doorway of light as a vector, animated by splash_door_anim.xml on
+     the Android 12+ system splash so motion starts the instant of the tap. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="63dp"
+    android:height="192dp"
+    android:viewportWidth="63"
+    android:viewportHeight="192">
+    <group
+        android:name="door"
+        android:pivotX="31.5"
+        android:pivotY="96">
+        <path
+            android:name="slab"
+            android:fillColor="#F2F0EA"
+            android:pathData="M6,10 a6,6 0 0 1 6,-6 h39 a6,6 0 0 1 6,6 v172 a6,6 0 0 1 -6,6 h-39 a6,6 0 0 1 -6,-6 z" />
+    </group>
+</vector>
