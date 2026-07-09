@@ -1,0 +1,27 @@
+name: Walkout ingest — fighters
+
+# Fighter detail (records, KO/Sub/Dec, photo URL) for the ranked set. Runs
+# daily — records only change after a fight, and this fetches ~180 athlete
+# pages. Free. Manual-runnable from the Actions tab.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  fighters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r tools/ingest/requirements.txt
+      - name: Write service account
+        run: echo "$FIREBASE_SA" > "${RUNNER_TEMP}/sa.json"
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+      - name: Run fighters ingest
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: python tools/ingest/ingest.py --mode fighters

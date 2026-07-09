@@ -121,6 +121,64 @@ def scrape_events():
     return out
 
 
+# ── Fighters (detail pages for the visible set) ──────────────────────────────
+def _ranked_slugs(rankings):
+    s = set()
+    for r in rankings:
+        if r["championId"]:
+            s.add(r["championId"])
+        for c in r["contenders"]:
+            s.add(c["fighterId"])
+    return sorted(s)
+
+
+def _stat_num(page, label):
+    j = page.find(label)
+    if j < 0:
+        return 0
+    m = re.search(r'hero-profile__stat-numb[^>]*>\s*(\d+)',
+                  re.sub(r"\s+", " ", page[max(0, j - 180):j]))
+    return int(m.group(1)) if m else 0
+
+
+def scrape_fighter(slug):
+    page = fetch(f"https://www.ufc.com/athlete/{slug}")
+    flat = re.sub(r"\s+", " ", page)
+    rec = re.search(r"(\d+)-(\d+)-(\d+)\s*\(W-L-D\)", flat)
+    if not rec:
+        return None
+    wins, losses, draws = (int(x) for x in rec.groups())
+    ko = _stat_num(page, "Wins by Knockout")
+    sub = _stat_num(page, "Wins by Submission")
+    dec = max(0, wins - ko - sub)
+    doc = {
+        "id": slug,
+        "record": {"wins": wins, "losses": losses, "draws": draws},
+        "winsByKo": ko, "winsBySub": sub, "winsByDec": dec,
+    }
+    # CDN full-body cutout — stored as photoUrl (widgets keep bundled imageUrl;
+    # in-app screens can adopt this later without a widget rewrite).
+    photo = re.search(
+        r'(https://ufc\.com/images/styles/athlete_bio_full_body/[^"\s]+\.(?:png|jpg|jpeg|webp))',
+        page)
+    if photo:
+        doc["photoUrl"] = photo.group(1)
+    return doc
+
+
+def scrape_fighters():
+    slugs = _ranked_slugs(scrape_rankings())
+    out = []
+    for s in slugs:
+        try:
+            d = scrape_fighter(s)
+            if d:
+                out.append(d)
+        except Exception:
+            pass  # one bad athlete page must not sink the batch
+    return out
+
+
 # ── Firestore write (merge, respect locked) ──────────────────────────────────
 def upsert(client, coll, docs, id_key):
     for d in docs:
@@ -141,14 +199,22 @@ def upsert(client, coll, docs, id_key):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--mode", choices=["feed", "fighters"], default="feed",
+                    help="feed = rankings+events (30-min cron); "
+                         "fighters = athlete detail for ranked set (daily cron)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
     client = None if args.dry_run else db()
     errors, results = [], {}
 
-    for name, fn, id_key in [("rankings", scrape_rankings, "weightClass"),
-                             ("events", scrape_events, "id")]:
+    if args.mode == "fighters":
+        jobs = [("fighters", scrape_fighters, "id")]
+    else:
+        jobs = [("rankings", scrape_rankings, "weightClass"),
+                ("events", scrape_events, "id")]
+
+    for name, fn, id_key in jobs:
         try:
             docs = fn()
         except Exception as e:
