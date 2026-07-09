@@ -30,7 +30,13 @@ class LivingWidgetProvider : AppWidgetProvider() {
         val imagePath = prefs.getString("living_png", null)
         val deeplink = prefs.getString("living_deeplink", "walkout://home")
         val showChrono = prefs.getBoolean("living_show_chrono", false)
-        val targetMs = prefs.getLong("living_target_ms", 0L)
+        // Dart ints small enough to fit are stored as Integer; getLong on
+        // those throws ClassCastException and takes the whole process down.
+        val targetMs = when (val v = prefs.all["living_target_ms"]) {
+            is Long -> v
+            is Int -> v.toLong()
+            else -> 0L
+        }
 
         for (widgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.widget_living)
