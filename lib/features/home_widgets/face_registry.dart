@@ -6,6 +6,7 @@ import 'package:walkout/shared/models/models.dart';
 import 'faces/concept_faces.dart';
 import 'faces/faceoff_face.dart';
 import 'faces/feed_faces.dart';
+import 'faces/slate_face.dart';
 
 /// One renderable home-screen widget face: what to draw, at which logical
 /// size, where a tap lands, and which assets must be warm before capture.
@@ -236,6 +237,36 @@ abstract final class FaceRegistry {
           label: 'MAIN CARD', time: clock(mainCardAt), at: mainCardAt),
     ];
 
+    // Weekend slate — the full five-beat itinerary, typical UFC cadence
+    // anchored to the main-card time.
+    final pressConfAt = DateTime(
+      mainCardAt.year,
+      mainCardAt.month,
+      mainCardAt.day,
+      17,
+    ).subtract(const Duration(days: 2));
+    final officialWeighInAt = DateTime(
+      mainCardAt.year,
+      mainCardAt.month,
+      mainCardAt.day,
+      9,
+    ).subtract(const Duration(days: 1));
+    final slateSessions = [
+      ScheduleSession(
+          label: 'PRESS CONFERENCE',
+          time: clock(pressConfAt),
+          at: pressConfAt),
+      ScheduleSession(
+          label: 'OFFICIAL WEIGH-IN',
+          time: clock(officialWeighInAt),
+          at: officialWeighInAt),
+      ScheduleSession(
+          label: 'CEREMONIAL WEIGH-IN', time: clock(weighInAt), at: weighInAt),
+      ScheduleSession(label: 'PRELIMS', time: clock(prelimsAt), at: prelimsAt),
+      ScheduleSession(
+          label: 'MAIN CARD', time: clock(mainCardAt), at: mainCardAt),
+    ];
+
     return [
       FaceSpec(
         key: 'fight_clock',
@@ -390,6 +421,18 @@ abstract final class FaceRegistry {
         face: FightWeekScheduleFace(
           eventTag: tagOf(nextEvent),
           sessions: fightWeekSessions,
+          now: now,
+        ),
+      ),
+      FaceSpec(
+        key: 'slate',
+        providerClass: 'SlateWidgetProvider',
+        size: four2,
+        deeplink: eventLink(nextEvent),
+        face: SlateFace(
+          eventTag: tagOf(nextEvent),
+          subtitle: nextEvent.subtitle,
+          sessions: slateSessions,
           now: now,
         ),
       ),
