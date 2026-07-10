@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../core/theme/app_icons.dart';
 import '../core/utils/context_extensions.dart';
 
-/// Bottom-navigation shell hosting the four primary branches. Uses GoRouter's
+/// Bottom-navigation shell hosting the five primary branches. Uses GoRouter's
 /// [StatefulNavigationShell] so each tab keeps its own navigation stack and
 /// scroll position.
 class AppShell extends StatelessWidget {
@@ -18,7 +18,9 @@ class AppShell extends StatelessWidget {
     _Destination(AppIcons.rankings, 'Rankings'),
     _Destination(Icons.track_changes_rounded, "Pick'Em"),
     _Destination(AppIcons.events, 'Events'),
-    _Destination(AppIcons.profile, 'Profile'),
+    // The flagship tab: gold treatment so it reads as the app's marquee
+    // feature even at rest.
+    _Destination(AppIcons.widgets, 'Widgets', highlighted: true),
   ];
 
   void _onTap(int index) {
@@ -65,7 +67,8 @@ class AppShell extends StatelessWidget {
 }
 
 /// Custom nav item: red tick above the active icon, brand glow, letterspaced
-/// overline label — no stock Material pill.
+/// overline label — no stock Material pill. Highlighted destinations swap the
+/// whole treatment to gold and keep the icon lit even when inactive.
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.destination,
@@ -80,7 +83,11 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final color = selected ? c.brand : c.textTertiary;
+    final highlighted = destination.highlighted;
+    final tickColor = highlighted ? c.accent : c.brand;
+    final color = highlighted
+        ? (selected ? c.accent : c.accent.withValues(alpha: 0.75))
+        : (selected ? c.brand : c.textTertiary);
 
     return GestureDetector(
       onTap: onTap,
@@ -98,19 +105,34 @@ class _NavItem extends StatelessWidget {
               height: 2.5,
               margin: const EdgeInsets.only(bottom: 5),
               decoration: BoxDecoration(
-                color: c.brand,
+                color: tickColor,
                 borderRadius: BorderRadius.circular(2),
                 boxShadow: selected
                     ? [
                         BoxShadow(
-                          color: c.brand.withValues(alpha: 0.6),
+                          color: tickColor.withValues(alpha: 0.6),
                           blurRadius: 8,
                         ),
                       ]
                     : null,
               ),
             ),
-            Icon(destination.icon, size: 23, color: color),
+            if (highlighted)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: c.accent.withValues(alpha: selected ? 0.35 : 0.18),
+                      blurRadius: 14,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Icon(destination.icon, size: 23, color: color),
+              )
+            else
+              Icon(destination.icon, size: 23, color: color),
             const SizedBox(height: 3),
             Text(
               destination.label.toUpperCase(),
@@ -129,7 +151,10 @@ class _NavItem extends StatelessWidget {
 }
 
 class _Destination {
-  const _Destination(this.icon, this.label);
+  const _Destination(this.icon, this.label, {this.highlighted = false});
   final IconData icon;
   final String label;
+
+  /// Marquee-feature emphasis: gold accent instead of the standard treatment.
+  final bool highlighted;
 }

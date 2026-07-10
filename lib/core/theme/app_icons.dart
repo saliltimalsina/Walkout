@@ -12,6 +12,7 @@ abstract final class AppIcons {
   static const IconData search = Icons.search_rounded;
   static const IconData profile = Icons.person_rounded;
   static const IconData notifications = Icons.notifications_rounded;
+  static const IconData widgets = Icons.widgets_rounded;
 
   // Actions
   static const IconData back = Icons.arrow_back_ios_new_rounded;

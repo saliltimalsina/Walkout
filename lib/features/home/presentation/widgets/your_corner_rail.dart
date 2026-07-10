@@ -39,7 +39,7 @@ class YourCornerRail extends ConsumerWidget {
         SectionHeader(
           title: 'Your Corner',
           actionLabel: 'View all',
-          onAction: () => context.go(AppRoutes.profile),
+          onAction: () => context.push(AppRoutes.profile),
         ),
         SizedBox(
           height: _kRail,

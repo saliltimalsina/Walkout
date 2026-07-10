@@ -78,6 +78,8 @@ class HomeScreen extends ConsumerWidget {
             badge: unread > 0,
             onPressed: () => context.push(AppRoutes.notifications),
           ),
+          AppSpacing.hGapXs,
+          const _ProfileAvatarButton(),
           AppSpacing.hGapSm,
         ],
       ),
@@ -123,6 +125,42 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Profile entry point: the user's avatar when loaded, a plain icon while
+/// loading or on error — the app bar never shows a blank slot.
+class _ProfileAvatarButton extends ConsumerWidget {
+  const _ProfileAvatarButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider).valueOrNull;
+    if (user == null) {
+      return AppIconButton(
+        icon: AppIcons.profile,
+        tooltip: 'Profile',
+        onPressed: () => context.push(AppRoutes.profile),
+      );
+    }
+    return Tooltip(
+      message: 'Profile',
+      child: Pressable(
+        onTap: () => context.push(AppRoutes.profile),
+        semanticLabel: 'Profile',
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Center(
+            child: AppAvatar(
+              name: user.name,
+              imageUrl: user.avatarUrl,
+              size: 30,
+            ),
+          ),
         ),
       ),
     );

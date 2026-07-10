@@ -17,7 +17,7 @@ abstract final class AppRoutes {
   static const String rankings = '/rankings';
   static const String pickem = '/pickem';
   static const String events = '/events';
-  static const String profile = '/profile';
+  static const String widgets = '/widgets';
 
   // NB: detail paths deliberately do NOT sit under '/pickem' — a sub-path of
   // a shell-branch route gets shadowed by the branch and never pushes.
@@ -36,6 +36,10 @@ abstract final class AppRoutes {
   // Pushed detail / modal routes
   static const String search = '/search';
   static const String notifications = '/notifications';
+
+  /// Profile — pushed over the shell (reached from the Home app bar), no
+  /// longer a bottom-nav branch. Navigate with `context.push`, never `go`.
+  static const String profile = '/profile';
 
   /// Fighter detail — pass the fighter id as a path parameter.
   static const String fighter = '/fighter/:id';
@@ -58,6 +62,7 @@ abstract final class AppRoutes {
   static const String nPickemResults = 'pickemResults';
   static const String nPickemShare = 'pickemShare';
   static const String nEvents = 'events';
+  static const String nWidgets = 'widgets';
   static const String nProfile = 'profile';
   static const String nSearch = 'search';
   static const String nNotifications = 'notifications';

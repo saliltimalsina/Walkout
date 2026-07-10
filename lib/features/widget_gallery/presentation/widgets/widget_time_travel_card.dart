@@ -10,6 +10,8 @@ import 'package:walkout/shared/providers/data_providers.dart';
 import 'package:walkout/shared/providers/favorites_controller.dart';
 import 'package:walkout/shared/widgets/widgets.dart';
 
+import '../../application/gallery_providers.dart';
+
 /// The date of the soonest upcoming card featuring a favorite fighter — the
 /// horizon the time-travel presets aim at. Null until data loads.
 final _soonestBookedDateProvider = Provider<DateTime?>((ref) {
@@ -60,7 +62,12 @@ class _WidgetTimeTravelCardState extends ConsumerState<WidgetTimeTravelCard> {
     final storage = ref.read(storageServiceProvider);
     await storage.setWidgetTimeOffsetHours(hours);
     await HomeWidgetService.refresh(storage);
-    if (mounted) setState(() => _busy = false);
+    if (!mounted) return;
+    // The gallery previews read the same offset — re-render them so the
+    // presets double as a live demo of every calendar state.
+    ref.invalidate(gallerySpecsProvider);
+    ref.invalidate(livingPreviewProvider);
+    setState(() => _busy = false);
   }
 
   @override

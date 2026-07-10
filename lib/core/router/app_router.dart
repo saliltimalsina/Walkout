@@ -20,6 +20,7 @@ import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/rankings/presentation/screens/rankings_screen.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
+import '../../features/widget_gallery/presentation/screens/widget_gallery_screen.dart';
 import '../../features/home_widgets/home_widget_service.dart';
 import '../constants/app_constants.dart';
 import '../providers/app_providers.dart';
@@ -93,7 +94,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const WhatsYourWalkoutScreen(),
       ),
 
-      // Bottom-nav shell with four persistent branches.
+      // Bottom-nav shell with five persistent branches.
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
@@ -137,9 +138,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.profile,
-                name: AppRoutes.nProfile,
-                builder: (context, state) => const ProfileScreen(),
+                path: AppRoutes.widgets,
+                name: AppRoutes.nWidgets,
+                builder: (context, state) => const WidgetGalleryScreen(),
               ),
             ],
           ),
@@ -152,6 +153,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: AppRoutes.nSearch,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SearchScreen(),
+      ),
+      // Reached via `context.push` from the Home app bar; `go` would replace
+      // the whole stack and drop the shell.
+      GoRoute(
+        path: AppRoutes.profile,
+        name: AppRoutes.nProfile,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
         path: AppRoutes.notifications,
