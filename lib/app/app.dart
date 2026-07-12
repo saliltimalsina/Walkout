@@ -13,6 +13,7 @@ import '../core/services/firebase_bootstrap.dart';
 import '../core/theme/app_theme.dart';
 import '../features/home_widgets/home_widget_service.dart';
 import '../shared/data/app_dataset.dart';
+import '../shared/providers/data_providers.dart';
 import '../shared/providers/favorites_controller.dart';
 
 /// Root application widget. Wires the router, light/dark themes, the persisted
@@ -24,13 +25,34 @@ class WalkoutApp extends ConsumerStatefulWidget {
   ConsumerState<WalkoutApp> createState() => _WalkoutAppState();
 }
 
-class _WalkoutAppState extends ConsumerState<WalkoutApp> {
+class _WalkoutAppState extends ConsumerState<WalkoutApp>
+    with WidgetsBindingObserver {
   StreamSubscription<Uri?>? _widgetClicks;
+  DateTime _lastResumeRefresh = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _initHomeWidgets());
+  }
+
+  /// Foregrounding the app is the cheapest freshness trigger there is: the
+  /// widgets re-render and the time-derived event lists re-filter, so a LIVE
+  /// flip that happened while backgrounded shows without a pull-to-refresh.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    final now = DateTime.now();
+    if (now.difference(_lastResumeRefresh) < const Duration(minutes: 1)) {
+      return;
+    }
+    _lastResumeRefresh = now;
+    unawaited(HomeWidgetService.refresh(ref.read(storageServiceProvider)));
+    ref
+      ..invalidate(upcomingEventsProvider)
+      ..invalidate(pastEventsProvider)
+      ..invalidate(featuredEventProvider);
   }
 
   Future<void> _initHomeWidgets() async {
@@ -64,6 +86,7 @@ class _WalkoutAppState extends ConsumerState<WalkoutApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _widgetClicks?.cancel();
     super.dispose();
   }

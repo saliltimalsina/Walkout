@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Explicit: widgets download CDN fighter photos from background
+         isolates; don't rely on library manifests merging this in. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="walkout"
         android:name="${applicationName}"

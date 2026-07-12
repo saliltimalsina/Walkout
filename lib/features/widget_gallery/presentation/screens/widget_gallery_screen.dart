@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:walkout/core/theme/app_spacing.dart';
 import 'package:walkout/core/utils/context_extensions.dart';
 import 'package:walkout/features/home_widgets/face_registry.dart';
+import 'package:walkout/shared/data/app_dataset.dart';
 import 'package:walkout/shared/widgets/widgets.dart';
 
 import '../../application/gallery_catalog.dart';
@@ -107,8 +109,15 @@ class _WidgetGalleryScreenState extends ConsumerState<WidgetGalleryScreen> {
                         AppSpacing.vGapMd,
                       ],
                     ],
-                    AppSpacing.vGapXl,
-                    const WidgetTimeTravelCard(),
+                    // Dev-only: shifts the widget clock to demo calendar
+                    // states. Must never ship — a leftover offset would
+                    // time-shift every widget for a release user.
+                    if (kDebugMode) ...[
+                      AppSpacing.vGapXl,
+                      const WidgetTimeTravelCard(),
+                      AppSpacing.vGapSm,
+                      const _DataSourceLine(),
+                    ],
                   ],
                 ),
               ),
@@ -116,6 +125,37 @@ class _WidgetGalleryScreenState extends ConsumerState<WidgetGalleryScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+/// Dev-only freshness line: which source served the dataset and when the
+/// backend last ingested.
+class _DataSourceLine extends StatelessWidget {
+  const _DataSourceLine();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return FutureBuilder<AppDataset>(
+      future: AppDataset.load(),
+      builder: (context, snap) {
+        final d = snap.data;
+        if (d == null) return const SizedBox.shrink();
+        final synced = d.syncedAt;
+        final ago = synced == null
+            ? null
+            : DateTime.now().difference(synced).inMinutes;
+        return Text(
+          'DATA: ${d.source.toUpperCase()}'
+          '${ago != null ? ' · SYNCED ${ago}M AGO' : ''}',
+          textAlign: TextAlign.center,
+          style: context.text.labelSmall?.copyWith(
+            color: c.textTertiary,
+            letterSpacing: 1,
+          ),
+        );
+      },
     );
   }
 }

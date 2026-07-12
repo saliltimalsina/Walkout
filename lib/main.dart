@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workmanager/workmanager.dart';
 
 import 'app/app.dart';
 import 'core/constants/app_constants.dart';
@@ -9,6 +13,7 @@ import 'core/providers/app_providers.dart';
 import 'core/services/firebase_bootstrap.dart';
 import 'core/services/storage_service.dart';
 import 'features/home_widgets/home_widget_service.dart';
+import 'features/home_widgets/widget_scheduler.dart';
 import 'shared/data/app_dataset.dart';
 
 /// Runs in a background isolate when the dashboard publishes a data-changed
@@ -21,6 +26,21 @@ Future<void> fcmBackgroundHandler(RemoteMessage message) async {
   final storage = await StorageService.init();
   AppDataset.reset();
   await HomeWidgetService.refresh(storage);
+}
+
+/// Runs in a background isolate for the workmanager tasks (30-min periodic
+/// net + one-off phase-boundary renders) so widget PNGs stay fresh with the
+/// app closed. Same headless pattern as [fcmBackgroundHandler].
+@pragma('vm:entry-point')
+void widgetBackgroundDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await FirebaseBootstrap.init(); // tolerates failure → bundled fallback
+    final storage = await StorageService.init();
+    AppDataset.reset();
+    await HomeWidgetService.refresh(storage);
+    return true;
+  });
 }
 
 Future<void> main() async {
@@ -38,6 +58,11 @@ Future<void> main() async {
   if (AppConstants.firebaseEnabled) {
     FirebaseMessaging.onBackgroundMessage(fcmBackgroundHandler);
     await FirebaseBootstrap.init();
+  }
+
+  if (!kIsWeb && Platform.isAndroid) {
+    await Workmanager().initialize(widgetBackgroundDispatcher);
+    await WidgetScheduler.registerPeriodic();
   }
 
   runApp(

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:home_widget/home_widget.dart';
 
@@ -11,6 +12,7 @@ import 'face_registry.dart';
 import 'faces/living_face.dart';
 import 'widget_capture.dart';
 import 'widget_image_resolver.dart';
+import 'widget_scheduler.dart';
 
 /// Bridges app data to the native home-screen widgets: resolves subjects,
 /// renders every face on the board to PNG and pushes update broadcasts.
@@ -28,11 +30,19 @@ class HomeWidgetService {
     try {
       final dataset = await AppDataset.load();
       final favorites = storage.favoriteFighterIds;
-      final now =
-          DateTime.now().add(Duration(hours: storage.widgetTimeOffsetHours));
-      await _refreshLiving(dataset, favorites, now);
+      // Time-travel is a dev tool; a leftover offset must never ship a
+      // time-shifted board to a release user.
+      final offsetHours =
+          kReleaseMode ? 0 : storage.widgetTimeOffsetHours;
+      final now = DateTime.now().add(Duration(hours: offsetHours));
+      await _refreshLiving(dataset, favorites, now, offsetHours);
       await _refreshBoard(dataset, favorites, now);
       await _refreshConfigured(dataset, now);
+      // Re-arm the next phase-boundary render. Skipped while time-traveling
+      // so dev demos never arm bogus background tasks.
+      if (offsetHours == 0) {
+        await WidgetScheduler.scheduleNextTransition(dataset, now);
+      }
     } catch (e, st) {
       // Widget refresh must never take the app down. Next foreground retries.
       debugPrint('[widgets] refresh FAILED: $e\n$st');
@@ -45,6 +55,7 @@ class HomeWidgetService {
     AppDataset dataset,
     Set<String> favorites,
     DateTime now,
+    int offsetHours,
   ) async {
     final snapshot = LivingStateMachine.resolve(
       now: now,
@@ -74,10 +85,16 @@ class HomeWidgetService {
         event.date.difference(now) <= const Duration(hours: 24) &&
         event.date.isAfter(now);
     // Chronometer base uses elapsedRealtime on the device; ship the target
-    // wall-clock time and let native convert.
+    // wall-clock time and let native convert. The target is shifted by the
+    // dev time-travel offset so the native remaining time matches the
+    // snapshot's shifted "now" instead of the real clock.
     await HomeWidget.saveWidgetData<bool>('living_show_chrono', showChrono);
     await HomeWidget.saveWidgetData<int>(
-        'living_target_ms', event?.date.millisecondsSinceEpoch ?? 0);
+        'living_target_ms',
+        event?.date
+                .subtract(Duration(hours: offsetHours))
+                .millisecondsSinceEpoch ??
+            0);
 
     final deeplink = switch (snapshot.state) {
       LivingState.corner when snapshot.fighter != null =>

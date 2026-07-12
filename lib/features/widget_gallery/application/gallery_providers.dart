@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:walkout/core/providers/app_providers.dart';
@@ -25,8 +26,8 @@ final gallerySpecsProvider = FutureProvider<List<FaceSpec>>((ref) async {
   final dataset = await AppDataset.load();
   final favorites = ref.watch(favoritesProvider);
   final storage = ref.read(storageServiceProvider);
-  final now =
-      DateTime.now().add(Duration(hours: storage.widgetTimeOffsetHours));
+  final offsetHours = kReleaseMode ? 0 : storage.widgetTimeOffsetHours;
+  final now = DateTime.now().add(Duration(hours: offsetHours));
   final specs = FaceRegistry.build(
     dataset: dataset,
     favorites: favorites,
@@ -42,8 +43,8 @@ final livingPreviewProvider =
   final dataset = await AppDataset.load();
   final favorites = ref.watch(favoritesProvider);
   final storage = ref.read(storageServiceProvider);
-  final now =
-      DateTime.now().add(Duration(hours: storage.widgetTimeOffsetHours));
+  final offsetHours = kReleaseMode ? 0 : storage.widgetTimeOffsetHours;
+  final now = DateTime.now().add(Duration(hours: offsetHours));
   final snapshot = LivingStateMachine.resolve(
     now: now,
     events: dataset.events,
