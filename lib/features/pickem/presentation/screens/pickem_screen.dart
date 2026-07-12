@@ -237,31 +237,39 @@ class _NextCardHero extends ConsumerWidget {
                           horizontal: 110,
                           vertical: AppSpacing.md,
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              (event.eventType.isEmpty
+                        // Scale-to-fit: long matchup names (or a large system
+                        // font) shrink the whole block instead of overflowing
+                        // the fixed-height poster zone.
+                        child: Center(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  (event.eventType.isEmpty
+                                          ? event.name
+                                          : event.eventType)
+                                      .toUpperCase(),
+                                  textAlign: TextAlign.center,
+                                  style: t.labelMedium?.copyWith(
+                                    color: c.brand,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                                AppSpacing.vGapSm,
+                                _MatchupLine(
+                                  subtitle: event.subtitle.isEmpty
                                       ? event.name
-                                      : event.eventType)
-                                  .toUpperCase(),
-                              textAlign: TextAlign.center,
-                              style: t.labelMedium?.copyWith(
-                                color: c.brand,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.5,
-                              ),
+                                      : event.subtitle,
+                                  stacked: true,
+                                ),
+                                AppSpacing.vGapSm,
+                                _ClosesInChip(closesAt: event.date),
+                              ],
                             ),
-                            AppSpacing.vGapSm,
-                            _MatchupLine(
-                              subtitle: event.subtitle.isEmpty
-                                  ? event.name
-                                  : event.subtitle,
-                              stacked: true,
-                            ),
-                            AppSpacing.vGapSm,
-                            _ClosesInChip(closesAt: event.date),
-                          ],
+                          ),
                         ),
                       ),
                     ],
