@@ -14,12 +14,15 @@ run before). A failed fetch/parse leaves existing Firestore data untouched.
 Local test:  GOOGLE_APPLICATION_CREDENTIALS=sa.json python ingest.py --dry-run
 """
 import argparse
+import hashlib
 import html as htmllib
+import json
 import os
 import re
 import sys
 import time
 import urllib.request
+from datetime import datetime, timezone
 
 import firebase_admin
 from firebase_admin import credentials, firestore, messaging
@@ -105,7 +108,9 @@ def scrape_events():
         status = "upcoming"
         if ts:
             epoch = int(ts.group(1))
-            date_iso = time.strftime("%Y-%m-%dT%H:%M:%S.000", time.gmtime(epoch))
+            # UTC with the Z — the app anchors every countdown/live window on
+            # this instant; a naive string would parse as device-local.
+            date_iso = time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime(epoch))
             status = "past" if epoch < time.time() else "upcoming"
         # Only fields we actually scraped — omit mainCard/prelims/heroImage so
         # merge() preserves the seeded bout data + posters.
@@ -119,6 +124,104 @@ def scrape_events():
             "status": status,
         })
     return out
+
+
+# ── Results (event pages, once a card has run) ──────────────────────────────
+def scrape_event_results(eid):
+    """Finished bouts on an event page: red/blue athlete slugs, the winner,
+    method and finish round. Unfinished bouts are skipped."""
+    page = fetch(f"https://www.ufc.com/event/{eid}")
+    out = []
+    for b in re.split(r'class="c-listing-fight"', page)[1:]:
+        red = re.search(
+            r'corner-name--red.*?href="[^"]*/athlete/([^"]+)"', b, re.S)
+        blue = re.search(
+            r'corner-name--blue.*?href="[^"]*/athlete/([^"]+)"', b, re.S)
+        if not red or not blue:
+            continue
+        # Outcomes appear corner-order: first belongs to red, second to blue.
+        outs = re.findall(r'c-listing-fight__outcome--(win|loss)', b)
+        if len(outs) < 2 or "win" not in outs[:2]:
+            continue  # bout not finished (or no result markup yet)
+        method = re.search(r'result-text method">([^<]*)<', b)
+        rnd = re.search(r'result-text round">([^<]*)<', b)
+        out.append({
+            "red": _slug(red.group(1)),
+            "blue": _slug(blue.group(1)),
+            "winnerId": _slug(red.group(1)) if outs[0] == "win"
+            else _slug(blue.group(1)),
+            "method": (method.group(1) if method else "").strip(),
+            "finishRound": (rnd.group(1) if rnd else "").strip(),
+        })
+    return out
+
+
+def _event_epoch(date_iso):
+    if not date_iso:
+        return None
+    try:
+        d = datetime.fromisoformat(date_iso.replace("Z", "+00:00"))
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=timezone.utc)  # legacy naive strings are UTC
+        return d.timestamp()
+    except ValueError:
+        return None
+
+
+def apply_results(client, dry_run=False):
+    """For events that ran within the last 5 days and still have bouts with
+    no winner, scrape the event page and merge results into the stored
+    mainCard/prelims (matched by corner-slug pair). Feeds Pick'Em scoring,
+    the past-event cards, and the Living Widget's result/aftermath states."""
+    now = time.time()
+    graded = []
+    for snap in client.collection("events").stream():
+        doc = snap.to_dict() or {}
+        epoch = _event_epoch(doc.get("date", ""))
+        if epoch is None or not (now - 5 * 86400 < epoch < now):
+            continue
+        locked = doc.get("locked", [])
+        if "mainCard" in locked and "prelims" in locked:
+            continue
+        bouts = [b for k in ("mainCard", "prelims") if k not in locked
+                 for b in doc.get(k, [])]
+        if not bouts or all(b.get("winnerId") for b in bouts):
+            continue
+        try:
+            results = scrape_event_results(snap.id)
+        except Exception as e:
+            print(f"results {snap.id} fetch failed: {e}", file=sys.stderr)
+            continue
+        if not results:
+            continue
+        by_pair = {frozenset((r["red"], r["blue"])): r for r in results}
+        update = {}
+        for key in ("mainCard", "prelims"):
+            if key in locked:
+                continue
+            arr = doc.get(key, [])
+            changed = False
+            for bout in arr:
+                if bout.get("winnerId"):
+                    continue
+                r = by_pair.get(frozenset(
+                    (bout.get("redCornerId", ""), bout.get("blueCornerId", ""))))
+                if not r:
+                    continue
+                bout["winnerId"] = r["winnerId"]
+                bout["method"] = r["method"]
+                bout["finishRound"] = r["finishRound"]
+                changed = True
+            if changed:
+                update[key] = arr
+        if update:
+            graded.append({"event": snap.id, "bouts": sorted(
+                b["winnerId"] for k in update.values() for b in k
+                if b.get("winnerId"))})
+            if not dry_run:
+                update["updatedAt"] = firestore.SERVER_TIMESTAMP
+                snap.reference.set(update, merge=True)
+    return graded
 
 
 # ── Fighters (detail pages for the visible set) ──────────────────────────────
@@ -214,6 +317,7 @@ def main():
         jobs = [("rankings", scrape_rankings, "weightClass"),
                 ("events", scrape_events, "id")]
 
+    scraped = {}
     for name, fn, id_key in jobs:
         try:
             docs = fn()
@@ -221,16 +325,40 @@ def main():
             errors.append(f"{name}: {e}")
             docs = []
         results[name] = len(docs)
+        scraped[name] = docs
         if docs and not args.dry_run:
             upsert(client, name, docs, id_key)
+
+    # Feed runs also grade recently-finished cards (Pick'Em scoring, past-event
+    # results, Living Widget result state). Needs Firestore, so skipped on
+    # --dry-run.
+    if args.mode == "feed" and not args.dry_run:
+        try:
+            graded = apply_results(client)
+        except Exception as e:
+            errors.append(f"results: {e}")
+            graded = []
+        results["graded"] = len(graded)
+        scraped["graded"] = graded
 
     print("ingest:", results, "errors:", errors)
     if args.dry_run:
         return
 
-    client.collection("meta").document("ingest").set(
+    # Only wake every phone when the scraped content actually changed.
+    # A status flip (upcoming -> past) changes the hash, so devices get a
+    # push right at the boundary — free precision — while identical runs
+    # stay silent instead of firing 48 high-priority pushes a day.
+    digest = hashlib.sha256(
+        json.dumps(scraped, sort_keys=True).encode()).hexdigest()
+    meta_ref = client.collection("meta").document("ingest")
+    prev = (meta_ref.get().to_dict() or {}).get(f"dataHash_{args.mode}")
+    meta_ref.set(
         {"lastRunAt": firestore.SERVER_TIMESTAMP, "source": "github-actions",
-         "errors": errors}, merge=True)
+         f"dataHash_{args.mode}": digest, "errors": errors}, merge=True)
+    if digest == prev and not errors:
+        print("no content change; skipping fcm push")
+        return
     try:
         messaging.send(messaging.Message(
             topic=FCM_TOPIC, data={"type": "data_changed"},
