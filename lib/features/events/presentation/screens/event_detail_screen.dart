@@ -85,6 +85,9 @@ class _EventDetailBodyState extends State<_EventDetailBody> {
     final event = widget.event;
     final mainCard = event.mainCard;
     final prelims = event.prelims;
+    // The bout in the cage right now (null outside the live window) — gets
+    // a LIVE tag on its card below.
+    final liveBout = event.liveBoutAt(DateTime.now());
 
     return CustomScrollView(
       slivers: [
@@ -139,6 +142,7 @@ class _EventDetailBodyState extends State<_EventDetailBody> {
                         _MainEventCard(
                           bout: mainCard.first,
                           fightersById: widget.fightersById,
+                          live: liveBout?.id == mainCard.first.id,
                         ),
                         for (var i = 1; i < mainCard.length; i++) ...[
                           AppSpacing.vGapMd,
@@ -146,6 +150,7 @@ class _EventDetailBodyState extends State<_EventDetailBody> {
                             bout: mainCard[i],
                             fightersById: widget.fightersById,
                             label: i == 1 ? 'CO-MAIN EVENT' : null,
+                            live: liveBout?.id == mainCard[i].id,
                           ),
                         ],
                       ],
@@ -174,6 +179,7 @@ class _EventDetailBodyState extends State<_EventDetailBody> {
                                       _CompactBoutCard(
                                         bout: prelims[i],
                                         fightersById: widget.fightersById,
+                                        live: liveBout?.id == prelims[i].id,
                                       ),
                                     ],
                                   ],
@@ -585,10 +591,17 @@ class _GlowVs extends StatelessWidget {
 /// Big marquee card for the main event: tall portraits bleeding off the card
 /// edges, glowing red VS, names and records, bout line at the bottom.
 class _MainEventCard extends StatelessWidget {
-  const _MainEventCard({required this.bout, required this.fightersById});
+  const _MainEventCard({
+    required this.bout,
+    required this.fightersById,
+    this.live = false,
+  });
 
   final Bout bout;
   final Map<String, Fighter> fightersById;
+
+  /// This bout is in the cage right now.
+  final bool live;
 
   @override
   Widget build(BuildContext context) {
@@ -607,13 +620,23 @@ class _MainEventCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         child: Column(
           children: [
-            Text(
-              'MAIN EVENT',
-              style: t.labelSmall?.copyWith(
-                color: c.brand,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 3,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'MAIN EVENT',
+                  style: t.labelSmall?.copyWith(
+                    color: c.brand,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 3,
+                  ),
+                ),
+                if (live) ...[
+                  AppSpacing.hGapSm,
+                  const _LiveNowTag(),
+                ],
+              ],
             ),
             AppSpacing.vGapSm,
             Row(
@@ -786,11 +809,15 @@ class _CompactBoutCard extends StatelessWidget {
     required this.bout,
     required this.fightersById,
     this.label,
+    this.live = false,
   });
 
   final Bout bout;
   final Map<String, Fighter> fightersById;
   final String? label;
+
+  /// This bout is in the cage right now.
+  final bool live;
 
   @override
   Widget build(BuildContext context) {
@@ -889,6 +916,10 @@ class _CompactBoutCard extends StatelessWidget {
                       AppSpacing.hGapXs,
                       const _TitleTag(),
                     ],
+                    if (live) ...[
+                      AppSpacing.hGapXs,
+                      const _LiveNowTag(),
+                    ],
                   ],
                 ),
                 AppSpacing.vGapSm,
@@ -949,6 +980,38 @@ class _CompactBoutCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Solid brand "LIVE" mini-tag on the bout that's in the cage right now.
+class _LiveNowTag extends StatelessWidget {
+  const _LiveNowTag();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+      decoration: BoxDecoration(
+        color: c.brand,
+        borderRadius: AppRadius.brSm,
+        boxShadow: [
+          BoxShadow(
+            color: c.brand.withValues(alpha: 0.5),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Text(
+        'LIVE',
+        style: context.text.labelSmall?.copyWith(
+          color: c.onBrand,
+          fontSize: 8.5,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }

@@ -101,7 +101,7 @@ class _EventCountdownState extends State<EventCountdown>
               _liveBadge(context, label: 'PRELIMS LIVE'),
             ],
           ),
-        EventPhase.mainCard => _liveBadge(context),
+        EventPhase.mainCard => _liveBadge(context, label: _liveLabel()),
         EventPhase.ended => _finalRow(context),
       };
     }
@@ -125,7 +125,7 @@ class _EventCountdownState extends State<EventCountdown>
                     _liveBadge(context, label: 'PRELIMS LIVE'),
                   ],
                 ),
-              EventPhase.mainCard => _liveBadge(context),
+              EventPhase.mainCard => _liveBadge(context, label: _liveLabel()),
               EventPhase.ended => _finalRow(context),
             },
             AppSpacing.vGapMd,
@@ -134,6 +134,20 @@ class _EventCountdownState extends State<EventCountdown>
         ),
       ),
     );
+  }
+
+  /// Names the fight in the cage when results data can identify it —
+  /// "LIVE • MCGREGOR VS HOLLOWAY" — else the generic main-card banner.
+  String _liveLabel() {
+    final b = widget.event.liveBoutAt(DateTime.now());
+    if (b == null) return 'LIVE • MAIN CARD IN PROGRESS';
+    String last(String cornerId, String name) => name.trim().isNotEmpty
+        ? name.trim().split(RegExp(r'\s+')).last
+        : cornerId.split('-').last;
+    final red = last(b.redCornerId, b.redName).toUpperCase();
+    final blue = last(b.blueCornerId, b.blueName).toUpperCase();
+    if (red.isEmpty || blue.isEmpty) return 'LIVE • MAIN CARD IN PROGRESS';
+    return 'LIVE • $red VS $blue';
   }
 
   /// Static row shown once the card is over — LIVE must visibly die.

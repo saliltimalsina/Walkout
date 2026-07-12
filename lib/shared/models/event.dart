@@ -94,4 +94,15 @@ abstract class Event with _$Event {
         EventPhase.ended => EventStatus.past,
         _ => EventStatus.live,
       };
+
+  /// The bout most likely in the cage right now: while the event is live,
+  /// the first bout in run order (prelims bottom-up, then main card
+  /// bottom-up) that has no result yet. Null outside the live window.
+  Bout? liveBoutAt(DateTime now) {
+    if (!isLiveAt(now)) return null;
+    for (final b in [...prelims.reversed, ...mainCard.reversed]) {
+      if (b.winnerId == null) return b;
+    }
+    return null;
+  }
 }
