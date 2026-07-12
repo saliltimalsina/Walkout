@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:walkout/core/router/app_routes.dart';
-import 'package:walkout/core/theme/app_icons.dart';
 import 'package:walkout/core/theme/app_motion.dart';
 import 'package:walkout/core/theme/app_radius.dart';
 import 'package:walkout/core/theme/app_spacing.dart';
@@ -17,6 +16,7 @@ import 'package:walkout/shared/widgets/widgets.dart';
 import '../widgets/card_label.dart';
 import '../widgets/event_card_skeleton.dart';
 import '../widgets/featured_event_card.dart';
+import '../widgets/fight_night_card.dart';
 import '../widgets/glow_vs.dart';
 import '../widgets/ppv_card.dart';
 
@@ -181,8 +181,10 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             ),
             for (var i = 0; i < fightNights.length; i++) ...[
               if (i > 0) AppSpacing.vGapMd,
-              _FightNightRow(
+              FightNightCard(
                 event: fightNights[i],
+                fightersById: fightersById,
+                highlight: i == 0,
                 onTap: () => _open(fightNights[i]),
               ),
             ],
@@ -436,159 +438,6 @@ class _QuickActionItem extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Compact list row for a Fight Night: date block, matchup, venue and a
-/// "days left" trailing label.
-class _FightNightRow extends StatelessWidget {
-  const _FightNightRow({required this.event, required this.onTap});
-
-  final Event event;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    final t = context.text;
-    final daysLeft = event.date.difference(DateTime.now()).inDays;
-    final leftLabel = daysLeft <= 0
-        ? 'Today'
-        : daysLeft == 1
-            ? 'Tomorrow'
-            : '$daysLeft days left';
-
-    return AppCard(
-      onTap: onTap,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.md,
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 44,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    event.date.monthShort.toUpperCase(),
-                    style: cardLabelStyle(context),
-                  ),
-                  Text(
-                    '${event.date.day}'.padLeft(2, '0'),
-                    style: t.headlineSmall?.copyWith(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      height: 1.1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            AppSpacing.hGapMd,
-            VerticalDivider(
-              color: c.brand,
-              width: 2,
-              thickness: 2,
-            ),
-            AppSpacing.hGapMd,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    event.eventType.isEmpty
-                        ? event.name
-                        : event.eventType,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style:
-                        t.bodySmall?.copyWith(color: c.textSecondary),
-                  ),
-                  AppSpacing.vGapXs,
-                  _MatchupText(
-                    event.subtitle.isEmpty ? event.name : event.subtitle,
-                  ),
-                  AppSpacing.vGapXs,
-                  Text(
-                    [
-                      if (event.venue.isNotEmpty) event.venue,
-                      if (event.location.isNotEmpty) event.location,
-                    ].join(', '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style:
-                        t.bodySmall?.copyWith(color: c.textSecondary),
-                  ),
-                ],
-              ),
-            ),
-            AppSpacing.hGapSm,
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  'MAIN CARD',
-                  style: cardLabelStyle(context),
-                ),
-                AppSpacing.vGapXs,
-                Text(
-                  leftLabel,
-                  style: t.bodySmall?.copyWith(color: c.textSecondary),
-                ),
-              ],
-            ),
-            AppSpacing.hGapXs,
-            Icon(AppIcons.forward, size: 20, color: c.textTertiary),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// "BLAYDES VS DAUKAUS" — uppercase bold names around the glowing red VS.
-class _MatchupText extends StatelessWidget {
-  const _MatchupText(this.matchup);
-
-  final String matchup;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.text;
-    final nameStyle = t.bodyLarge?.copyWith(
-      fontWeight: FontWeight.w800,
-      letterSpacing: 0.5,
-    );
-    final parts =
-        matchup.split(RegExp(r'\s+vs\.?\s+', caseSensitive: false));
-
-    if (parts.length != 2) {
-      return Text(
-        matchup.toUpperCase(),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: nameStyle,
-      );
-    }
-
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(text: parts[0].toUpperCase()),
-          GlowVs.span(context, size: 11),
-          TextSpan(text: parts[1].toUpperCase()),
-        ],
-      ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: nameStyle,
     );
   }
 }
