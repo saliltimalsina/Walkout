@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import 'package:walkout/shared/models/models.dart';
+
 import 'face_kit.dart';
 
 // ── NEWS · LATEST STORIES (4x2) ──────────────────────────────────────
@@ -248,7 +250,13 @@ class FightWeekScheduleFace extends StatelessWidget {
     final next = nextIdx >= 0 ? sessions[nextIdx] : null;
 
     String countdown() {
-      if (next == null) return 'CARD IN PROGRESS';
+      if (next == null) {
+        // Past the live window the card is over — never say "in progress"
+        // forever on a stale render.
+        return now.isBefore(sessions.last.at.add(Event.liveTail))
+            ? 'CARD IN PROGRESS'
+            : 'CARD COMPLETE';
+      }
       final d = next.at.difference(now);
       final days = d.inDays;
       final hrs = d.inHours % 24;

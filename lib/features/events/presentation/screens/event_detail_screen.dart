@@ -120,7 +120,8 @@ class _EventDetailBodyState extends State<_EventDetailBody> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (event.status != EventStatus.past) ...[
+                      if (event.phaseAt(DateTime.now()) !=
+                          EventPhase.ended) ...[
                         EventCountdown(event: event),
                         AppSpacing.vGapXl,
                       ],

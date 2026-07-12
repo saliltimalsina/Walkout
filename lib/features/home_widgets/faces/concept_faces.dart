@@ -63,10 +63,15 @@ class FightClockFace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final phase = event.phaseAt(now);
+    final live =
+        phase == EventPhase.prelims || phase == EventPhase.mainCard;
+    // Clamp so a stale render can never show negative hours/minutes.
     final diff = event.date.difference(now);
-    final days = diff.inDays;
-    final hours = diff.inHours % 24;
-    final mins = diff.inMinutes % 60;
+    final left = diff.isNegative ? Duration.zero : diff;
+    final days = left.inDays;
+    final hours = left.inHours % 24;
+    final mins = left.inMinutes % 60;
     final fightWeek = !diff.isNegative && diff.inDays <= 7;
     final hasPortraits = (red?.photo.isNotEmpty ?? false) &&
         (blue?.photo.isNotEmpty ?? false);
@@ -134,22 +139,33 @@ class FightClockFace extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: FaceKit.anton(27)),
                     ),
-                  // Countdown strip.
+                  // Countdown strip — swaps to a live/final banner once the
+                  // window opens so the face never counts below zero.
+                  if (phase == EventPhase.ended)
+                    FaceKit.pill('FINAL', fontSize: 10)
+                  else if (live)
+                    FaceKit.pill(
+                      phase == EventPhase.mainCard
+                          ? 'LIVE · MAIN CARD'
+                          : 'LIVE · PRELIMS',
+                      fontSize: 10,
+                    )
+                  else
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _unit('$days', days == 1 ? 'DAY' : 'DAYS'),
+                        const SizedBox(width: 22),
+                        _unit('$hours', 'HRS'),
+                        const SizedBox(width: 22),
+                        _unit('$mins', 'MINS'),
+                      ],
+                    ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _unit('${days < 0 ? 0 : days}', days == 1 ? 'DAY' : 'DAYS'),
-                      const SizedBox(width: 22),
-                      _unit('$hours', 'HRS'),
-                      const SizedBox(width: 22),
-                      _unit('$mins', 'MINS'),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (fightWeek) ...[
+                      if (fightWeek && !live) ...[
                         FaceKit.pill('FIGHT WEEK', fontSize: 7),
                         const SizedBox(width: 7),
                       ],
@@ -274,9 +290,13 @@ class OctagonCountFace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final days = event.date.difference(now).inDays;
-    // Ring walks in over a 45-day promotion window.
-    final p = (1 - days / 45).clamp(0.04, 1.0).toDouble();
+    final live = event.isLiveAt(now);
+    // Clamp so a stale render never shows negative days.
+    final rawDays = event.date.difference(now).inDays;
+    final days = rawDays < 0 ? 0 : rawDays;
+    // Ring walks in over a 45-day promotion window; full while live.
+    final p =
+        live ? 1.0 : (1 - days / 45).clamp(0.04, 1.0).toDouble();
     return FaceKit.scaffold(
       auraCenter: Alignment.center,
       auraAlpha: 0.2,
@@ -288,14 +308,23 @@ class OctagonCountFace extends StatelessWidget {
             progress: p,
             size: 98,
             fill: FaceKit.brand,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('$days', style: FaceKit.anton(32)),
-                Text(days == 1 ? 'DAY' : 'DAYS',
-                    style: FaceKit.over(8, FaceKit.t2)),
-              ],
-            ),
+            child: live
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('LIVE',
+                          style: FaceKit.anton(22, c: FaceKit.brand)),
+                      Text('NOW', style: FaceKit.over(8, FaceKit.t2)),
+                    ],
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('$days', style: FaceKit.anton(32)),
+                      Text(days == 1 ? 'DAY' : 'DAYS',
+                          style: FaceKit.over(8, FaceKit.t2)),
+                    ],
+                  ),
           ),
           const SizedBox(height: 7),
           Text(_eventTag(event), style: FaceKit.over(8.5, FaceKit.brand)),

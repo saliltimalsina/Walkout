@@ -18,6 +18,7 @@ mixin _$Event {
   String get id;
   String get name;
   String get subtitle; // e.g. "Jones vs Aspinall"
+  @JsonKey(fromJson: _eventDateFromJson, toJson: _eventDateToJson)
   DateTime get date;
   String get venue;
   String get location;
@@ -28,6 +29,9 @@ mixin _$Event {
 
   /// Headline label, e.g. "UFC Fight Night" or "UFC 328".
   String get eventType;
+
+  /// Pipeline hint written by ingest/seed. Do NOT use for logic — it only
+  /// updates when data is republished. Use [statusAt]/[isLiveAt] instead.
   EventStatus get status;
   List<Bout> get mainCard;
   List<Bout> get prelims;
@@ -98,6 +102,7 @@ abstract mixin class $EventCopyWith<$Res> {
       {String id,
       String name,
       String subtitle,
+      @JsonKey(fromJson: _eventDateFromJson, toJson: _eventDateToJson)
       DateTime date,
       String venue,
       String location,
@@ -194,6 +199,7 @@ class _Event extends Event {
       {required this.id,
       required this.name,
       this.subtitle = '',
+      @JsonKey(fromJson: _eventDateFromJson, toJson: _eventDateToJson)
       required this.date,
       this.venue = '',
       this.location = '',
@@ -217,6 +223,7 @@ class _Event extends Event {
   final String subtitle;
 // e.g. "Jones vs Aspinall"
   @override
+  @JsonKey(fromJson: _eventDateFromJson, toJson: _eventDateToJson)
   final DateTime date;
   @override
   @JsonKey()
@@ -237,6 +244,9 @@ class _Event extends Event {
   @override
   @JsonKey()
   final String eventType;
+
+  /// Pipeline hint written by ingest/seed. Do NOT use for logic — it only
+  /// updates when data is republished. Use [statusAt]/[isLiveAt] instead.
   @override
   @JsonKey()
   final EventStatus status;
@@ -330,6 +340,7 @@ abstract mixin class _$EventCopyWith<$Res> implements $EventCopyWith<$Res> {
       {String id,
       String name,
       String subtitle,
+      @JsonKey(fromJson: _eventDateFromJson, toJson: _eventDateToJson)
       DateTime date,
       String venue,
       String location,

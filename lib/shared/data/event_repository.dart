@@ -13,24 +13,32 @@ class EventRepository {
     return events;
   }
 
-  Future<List<Event>> getUpcoming() async {
+  /// Everything not yet ended, live events included. Status is derived from
+  /// the clock ([Event.statusAt]) — the stored field goes stale between
+  /// ingest runs. [now] is injectable for tests.
+  Future<List<Event>> getUpcoming({DateTime? now}) async {
+    final n = now ?? DateTime.now();
     final all = await getAll();
-    return all.where((e) => e.status != EventStatus.past).toList();
+    return all.where((e) => e.statusAt(n) != EventStatus.past).toList();
   }
 
-  Future<List<Event>> getPast() async {
+  Future<List<Event>> getPast({DateTime? now}) async {
+    final n = now ?? DateTime.now();
     final all = await getAll();
     return all
-        .where((e) => e.status == EventStatus.past)
+        .where((e) => e.statusAt(n) == EventStatus.past)
         .toList()
         .reversed
         .toList();
   }
 
-  /// The next headline event to feature on the home screen.
-  Future<Event?> getFeatured() async {
-    final upcoming = await getUpcoming();
-    return upcoming.firstOrNull;
+  /// The headline event for the home hero: the live one while a card is on,
+  /// else the next upcoming.
+  Future<Event?> getFeatured({DateTime? now}) async {
+    final n = now ?? DateTime.now();
+    final upcoming = await getUpcoming(now: n);
+    return upcoming.where((e) => e.isLiveAt(n)).firstOrNull ??
+        upcoming.firstOrNull;
   }
 
   Future<Event> getById(String id) async {

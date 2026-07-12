@@ -43,13 +43,18 @@ abstract final class FaceRegistry {
     final byId = dataset.fighterById;
     final events = [...dataset.events]
       ..sort((a, b) => a.date.compareTo(b.date));
+    // Time-derived status: the stored field goes stale between ingest runs.
+    // A live event stays the board's subject until its window closes instead
+    // of the board flipping to next week the second the main card starts.
     final upcoming = events
-        .where((e) => e.status != EventStatus.past && e.date.isAfter(now))
+        .where((e) => e.statusAt(now) != EventStatus.past)
         .toList();
-    final nextEvent = upcoming.firstWhere(
-      (e) => e.mainEvent != null,
-      orElse: () => upcoming.isEmpty ? events.last : upcoming.first,
-    );
+    final live = upcoming.where((e) => e.isLiveAt(now)).lastOrNull;
+    final nextEvent = live ??
+        upcoming.firstWhere(
+          (e) => e.mainEvent != null,
+          orElse: () => upcoming.isEmpty ? events.last : upcoming.first,
+        );
 
     // ── subjects ──
     final favs = favorites
@@ -101,11 +106,11 @@ abstract final class FaceRegistry {
     final nextRed = nextMain != null ? byId[nextMain.redCornerId] : null;
     final nextBlue = nextMain != null ? byId[nextMain.blueCornerId] : null;
 
-    // Real fight history from the bundled past events, newest first.
+    // Real fight history from events already fought, newest first.
     List<String> historyOf(String fighterId) {
       final out = <String>[];
       for (final e in events.reversed) {
-        if (e.status != EventStatus.past) continue;
+        if (!e.date.isBefore(now)) continue;
         for (final b in [...e.mainCard, ...e.prelims]) {
           if (b.winnerId == null) continue;
           if (b.redCornerId == fighterId || b.blueCornerId == fighterId) {
@@ -474,7 +479,7 @@ abstract final class FaceRegistry {
     List<String> historyOf(String fighterId) {
       final out = <String>[];
       for (final e in events.reversed) {
-        if (e.status != EventStatus.past) continue;
+        if (!e.date.isBefore(now)) continue;
         for (final b in [...e.mainCard, ...e.prelims]) {
           if (b.winnerId == null) continue;
           if (b.redCornerId == fighterId || b.blueCornerId == fighterId) {

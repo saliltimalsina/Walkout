@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/providers/clock_provider.dart';
 import '../../core/theme/app_icons.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
@@ -9,15 +11,17 @@ import '../models/event.dart';
 import 'app_card.dart';
 
 /// Reusable event summary card used on home and the events list.
-class EventCard extends StatelessWidget {
+class EventCard extends ConsumerWidget {
   const EventCard({super.key, required this.event, this.onTap});
 
   final Event event;
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
+    // Coarse clock keeps the LIVE pill honest while the list sits on screen.
+    final now = ref.watch(clockProvider).valueOrNull ?? DateTime.now();
 
     return AppCard(
       onTap: onTap,
@@ -43,7 +47,7 @@ class EventCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (event.status == EventStatus.live) ...[
+                    if (event.isLiveAt(now)) ...[
                       AppSpacing.hGapSm,
                       const _LiveDot(),
                     ],

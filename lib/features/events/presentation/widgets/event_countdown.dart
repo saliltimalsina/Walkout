@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:walkout/core/theme/app_icons.dart';
 import 'package:walkout/core/theme/app_spacing.dart';
 import 'package:walkout/core/utils/context_extensions.dart';
 import 'package:walkout/core/utils/date_x.dart';
@@ -9,13 +10,13 @@ import 'package:walkout/shared/models/models.dart';
 
 import 'aura_card.dart';
 
-/// Live-aware DAYS / HRS / MIN / SEC countdown shared by the featured hero
+/// Phase-aware DAYS / HRS / MIN / SEC countdown shared by the featured hero
 /// ([compact]) and the event detail card.
 ///
-/// Ticks once a second while the event is upcoming. Once `DateTime.now()`
-/// reaches [Event.date] — or the event is flagged [EventStatus.live] — the
-/// digits are replaced by a pulsing red LIVE badge instead of freezing at
-/// zeros.
+/// Follows [Event.phaseAt]: upcoming → ticking digits; prelims → digits (to
+/// the main-card walk) plus a pulsing PRELIMS LIVE pill; mainCard → pulsing
+/// LIVE badge; ended → a static FINAL row. The 1s timer keeps running through
+/// the live window so LIVE → FINAL happens without an external rebuild.
 class EventCountdown extends StatefulWidget {
   const EventCountdown({
     super.key,
@@ -39,9 +40,10 @@ class _EventCountdownState extends State<EventCountdown>
   Timer? _timer;
   late final AnimationController _pulse;
 
+  EventPhase get _phase => widget.event.phaseAt(DateTime.now());
+
   bool get _isLive =>
-      widget.event.status == EventStatus.live ||
-      !DateTime.now().isBefore(widget.event.date);
+      _phase == EventPhase.prelims || _phase == EventPhase.mainCard;
 
   @override
   void initState() {
@@ -53,13 +55,17 @@ class _EventCountdownState extends State<EventCountdown>
     _syncMode();
   }
 
-  /// Ticks every second while counting down; hands over to the repeating
-  /// pulse the moment the clock crosses zero (or the event goes live).
+  /// Ticks every second until the event ends; the pulse runs only while live.
+  /// The timer must survive the live window — it is what flips LIVE → FINAL.
   void _syncMode() {
     if (_isLive) {
+      if (!_pulse.isAnimating) _pulse.repeat(reverse: true);
+    } else {
+      _pulse.stop();
+    }
+    if (_phase == EventPhase.ended) {
       _timer?.cancel();
       _timer = null;
-      if (!_pulse.isAnimating) _pulse.repeat(reverse: true);
     } else {
       _timer ??= Timer.periodic(const Duration(seconds: 1), (_) {
         if (!mounted) return;
@@ -82,8 +88,22 @@ class _EventCountdownState extends State<EventCountdown>
 
   @override
   Widget build(BuildContext context) {
+    final phase = _phase;
+
     if (widget.compact) {
-      return _isLive ? _liveBadge(context) : _compactRow(context);
+      return switch (phase) {
+        EventPhase.upcoming => _compactRow(context),
+        EventPhase.prelims => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _compactRow(context),
+              AppSpacing.vGapSm,
+              _liveBadge(context, label: 'PRELIMS LIVE'),
+            ],
+          ),
+        EventPhase.mainCard => _liveBadge(context),
+        EventPhase.ended => _finalRow(context),
+      };
     }
 
     return AuraCard(
@@ -95,7 +115,19 @@ class _EventCountdownState extends State<EventCountdown>
         ),
         child: Column(
           children: [
-            if (_isLive) _liveBadge(context) else _cardRow(context),
+            switch (phase) {
+              EventPhase.upcoming => _cardRow(context),
+              EventPhase.prelims => Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _cardRow(context),
+                    AppSpacing.vGapMd,
+                    _liveBadge(context, label: 'PRELIMS LIVE'),
+                  ],
+                ),
+              EventPhase.mainCard => _liveBadge(context),
+              EventPhase.ended => _finalRow(context),
+            },
             AppSpacing.vGapMd,
             _dateLine(context),
           ],
@@ -104,8 +136,34 @@ class _EventCountdownState extends State<EventCountdown>
     );
   }
 
+  /// Static row shown once the card is over — LIVE must visibly die.
+  Widget _finalRow(BuildContext context) {
+    final c = context.colors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(AppIcons.check, size: widget.compact ? 12 : 14, color: c.brand),
+          AppSpacing.hGapSm,
+          Text(
+            'FINAL • EVENT COMPLETE',
+            style: context.text.labelSmall?.copyWith(
+              color: widget.compact ? Colors.white : c.textPrimary,
+              fontSize: widget.compact ? 10 : 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Pulsing red dot + letterspaced LIVE label, shown instead of zeros.
-  Widget _liveBadge(BuildContext context) {
+  Widget _liveBadge(BuildContext context,
+      {String label = 'LIVE • MAIN CARD IN PROGRESS'}) {
     final c = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
@@ -136,7 +194,7 @@ class _EventCountdownState extends State<EventCountdown>
           ),
           AppSpacing.hGapSm,
           Text(
-            'LIVE • MAIN CARD IN PROGRESS',
+            label,
             style: context.text.labelSmall?.copyWith(
               color: widget.compact ? Colors.white : c.textPrimary,
               fontSize: widget.compact ? 10 : 11,

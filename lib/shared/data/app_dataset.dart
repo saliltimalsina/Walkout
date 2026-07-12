@@ -13,7 +13,8 @@ import '../models/ranking.dart';
 /// Firestore when the backend is live, else the bundled scraped JSON. Firestore
 /// failures fall back to bundled so the app is never dataless.
 class AppDataset {
-  AppDataset._(this.fighters, this.rankings, this.events, this.source)
+  AppDataset._(this.fighters, this.rankings, this.events, this.source,
+      {this.syncedAt})
       : fighterById = {for (final f in fighters) f.id: f};
 
   final List<Fighter> fighters;
@@ -24,6 +25,10 @@ class AppDataset {
   /// 'firestore' or 'bundled' — useful for debugging / a dashboard badge.
   final String source;
 
+  /// Last successful ingest run (meta/ingest.lastRunAt); null when bundled
+  /// or the meta doc is absent. The gallery dev area shows this.
+  final DateTime? syncedAt;
+
   static AppDataset? _instance;
 
   static Future<AppDataset> load() async {
@@ -32,11 +37,15 @@ class AppDataset {
 
     if (FirebaseBootstrap.isReady) {
       try {
-        return _instance = await _loadRemote();
+        final remote = await _loadRemote();
+        debugPrint(
+            '[dataset] source=firestore synced=${remote.syncedAt ?? 'unknown'}');
+        return _instance = remote;
       } catch (e) {
         debugPrint('[dataset] remote load failed, using bundled: $e');
       }
     }
+    debugPrint('[dataset] source=bundled');
     return _instance = await _loadBundled();
   }
 
@@ -70,6 +79,13 @@ class AppDataset {
       db.collection('rankings').get(),
       db.collection('events').get(),
     ]);
+    // Freshness signal only — tolerate the meta doc being absent.
+    DateTime? syncedAt;
+    try {
+      final meta = await db.collection('meta').doc('ingest').get();
+      final ts = meta.data()?['lastRunAt'];
+      if (ts is Timestamp) syncedAt = ts.toDate();
+    } catch (_) {}
     // Docs are stored in the same shape as the bundled JSON, so fromJson maps
     // straight across (seed script guarantees this contract).
     final fighters = results[0]
@@ -87,15 +103,17 @@ class AppDataset {
     if (fighters.isEmpty || events.isEmpty) {
       throw StateError('firestore returned empty collections');
     }
-    return AppDataset._(fighters, rankings, events, 'firestore');
+    return AppDataset._(fighters, rankings, events, 'firestore',
+        syncedAt: syncedAt);
   }
 
   /// Firestore hands back `Timestamp` for date fields; the models expect ISO
-  /// strings. Coerce any Timestamp to ISO-8601 so fromJson stays unchanged.
+  /// strings. Coerce any Timestamp to UTC ISO-8601 (with the `Z`) so the same
+  /// instant round-trips regardless of device timezone.
   static Map<String, dynamic> _normalize(Map<String, dynamic> data) {
     final out = <String, dynamic>{};
     data.forEach((k, v) {
-      out[k] = v is Timestamp ? v.toDate().toIso8601String() : v;
+      out[k] = v is Timestamp ? v.toDate().toUtc().toIso8601String() : v;
     });
     return out;
   }

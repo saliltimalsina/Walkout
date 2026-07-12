@@ -51,20 +51,38 @@ void main() {
   group('EventRepository', () {
     const repo = EventRepository();
 
-    test('getUpcoming excludes past events', () async {
-      final upcoming = await repo.getUpcoming();
-      expect(upcoming.every((e) => e.status != EventStatus.past), isTrue);
+    test('getUpcoming excludes ended events (time-derived)', () async {
+      final now = DateTime.now();
+      final upcoming = await repo.getUpcoming(now: now);
+      expect(upcoming.every((e) => e.statusAt(now) != EventStatus.past),
+          isTrue);
     });
 
-    test('getPast returns only past events', () async {
-      final past = await repo.getPast();
-      expect(past.every((e) => e.status == EventStatus.past), isTrue);
+    test('getPast returns only ended events (time-derived)', () async {
+      final now = DateTime.now();
+      final past = await repo.getPast(now: now);
+      expect(
+          past.every((e) => e.statusAt(now) == EventStatus.past), isTrue);
     });
 
-    test('getFeatured returns the next upcoming event', () async {
-      final featured = await repo.getFeatured();
+    test('upcoming + past partition all events', () async {
+      final now = DateTime.now();
+      final all = await repo.getAll();
+      final upcoming = await repo.getUpcoming(now: now);
+      final past = await repo.getPast(now: now);
+      expect(upcoming.length + past.length, all.length);
+    });
+
+    test('getFeatured returns a non-ended event, live preferred', () async {
+      final now = DateTime.now();
+      final featured = await repo.getFeatured(now: now);
       expect(featured, isNotNull);
-      expect(featured!.status, isNot(EventStatus.past));
+      expect(featured!.statusAt(now), isNot(EventStatus.past));
+      final upcoming = await repo.getUpcoming(now: now);
+      final liveOnes = upcoming.where((e) => e.isLiveAt(now));
+      if (liveOnes.isNotEmpty) {
+        expect(featured.id, liveOnes.first.id);
+      }
     });
   });
 

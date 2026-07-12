@@ -81,7 +81,9 @@ class PhaseSchedule {
   DateTime get mediaDay => _dayStart(mainCard.subtract(const Duration(days: 3)));
   DateTime get openWorkouts => _dayStart(mainCard.subtract(const Duration(days: 2)));
   DateTime get weighInDay => _dayStart(mainCard.subtract(const Duration(days: 1)));
-  DateTime get earlyPrelims => mainCard.subtract(const Duration(hours: 4));
+  // Shared with the app UI's live window (Event.prelimsLead) so the widgets
+  // and the events screen agree on when fight night starts.
+  DateTime get earlyPrelims => mainCard.subtract(Event.prelimsLead);
   DateTime get prelims => mainCard.subtract(const Duration(hours: 2));
 
   static DateTime _dayStart(DateTime d) => DateTime(d.year, d.month, d.day);
