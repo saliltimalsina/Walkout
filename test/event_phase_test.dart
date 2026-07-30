@@ -5,6 +5,8 @@ import 'package:walkout/shared/models/event.dart';
 /// The live window is the contract the whole app hangs off:
 ///   upcoming ─(date−4h)─ prelims ─(date)─ mainCard ─(date+6h | winner)─ ended
 void main() {
+  _scrapedPrelimTimes();
+
   final date = DateTime(2026, 7, 12, 22); // arbitrary local instant
 
   Event event({String? winnerId}) => Event(
@@ -109,3 +111,44 @@ Event _fromDate(String iso) => Event.fromJson({
       'name': 'UFC Test',
       'date': iso,
     });
+
+/// Real broadcast times from ufc.com replace the fixed 4h estimate, so the
+/// live window opens when the night actually starts.
+void _scrapedPrelimTimes() {
+  final date = DateTime(2026, 8, 16, 1);
+
+  Event withTimes({DateTime? prelims, DateTime? early}) => Event(
+        id: 'ufc-330',
+        name: 'UFC 330',
+        date: date,
+        prelimsAt: prelims,
+        earlyPrelimsAt: early,
+      );
+
+  group('Event.doorsOpen', () {
+    test('falls back to the 4h estimate when the source has no times', () {
+      expect(withTimes().doorsOpen, date.subtract(Event.prelimsLead));
+    });
+
+    test('uses prelimsAt when only that is known', () {
+      final p = date.subtract(const Duration(hours: 2));
+      expect(withTimes(prelims: p).doorsOpen, p);
+    });
+
+    test('prefers the earliest real broadcast start', () {
+      final p = date.subtract(const Duration(hours: 2));
+      final e = date.subtract(const Duration(hours: 4));
+      expect(withTimes(prelims: p, early: e).doorsOpen, e);
+    });
+
+    test('a 2h prelim start keeps the card upcoming past the 4h estimate', () {
+      final e = withTimes(prelims: date.subtract(const Duration(hours: 2)));
+      // The old fixed lead would already have flipped this to prelims/LIVE.
+      expect(e.phaseAt(date.subtract(const Duration(hours: 3))),
+          EventPhase.upcoming);
+      expect(e.isLiveAt(date.subtract(const Duration(hours: 3))), isFalse);
+      expect(e.phaseAt(date.subtract(const Duration(hours: 1))),
+          EventPhase.prelims);
+    });
+  });
+}

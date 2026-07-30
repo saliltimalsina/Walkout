@@ -17,7 +17,10 @@ T _$identity<T>(T value) => value;
 mixin _$RankingEntry {
   String get fighterId;
   int get position; // 0 = champion, 1..15 = ranked
-  int get change;
+  int get change; // movement vs last update (+/-)
+  /// Entered the top 15 in the latest update (ufc.com marks these `NR`
+  /// rather than giving a movement figure).
+  bool get isNew;
 
   /// Create a copy of RankingEntry
   /// with the given fields replaced by the non-null parameter values.
@@ -39,16 +42,18 @@ mixin _$RankingEntry {
                 other.fighterId == fighterId) &&
             (identical(other.position, position) ||
                 other.position == position) &&
-            (identical(other.change, change) || other.change == change));
+            (identical(other.change, change) || other.change == change) &&
+            (identical(other.isNew, isNew) || other.isNew == isNew));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, fighterId, position, change);
+  int get hashCode =>
+      Object.hash(runtimeType, fighterId, position, change, isNew);
 
   @override
   String toString() {
-    return 'RankingEntry(fighterId: $fighterId, position: $position, change: $change)';
+    return 'RankingEntry(fighterId: $fighterId, position: $position, change: $change, isNew: $isNew)';
   }
 }
 
@@ -58,7 +63,7 @@ abstract mixin class $RankingEntryCopyWith<$Res> {
           RankingEntry value, $Res Function(RankingEntry) _then) =
       _$RankingEntryCopyWithImpl;
   @useResult
-  $Res call({String fighterId, int position, int change});
+  $Res call({String fighterId, int position, int change, bool isNew});
 }
 
 /// @nodoc
@@ -76,6 +81,7 @@ class _$RankingEntryCopyWithImpl<$Res> implements $RankingEntryCopyWith<$Res> {
     Object? fighterId = null,
     Object? position = null,
     Object? change = null,
+    Object? isNew = null,
   }) {
     return _then(_self.copyWith(
       fighterId: null == fighterId
@@ -90,6 +96,10 @@ class _$RankingEntryCopyWithImpl<$Res> implements $RankingEntryCopyWith<$Res> {
           ? _self.change
           : change // ignore: cast_nullable_to_non_nullable
               as int,
+      isNew: null == isNew
+          ? _self.isNew
+          : isNew // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -98,7 +108,10 @@ class _$RankingEntryCopyWithImpl<$Res> implements $RankingEntryCopyWith<$Res> {
 @JsonSerializable()
 class _RankingEntry implements RankingEntry {
   const _RankingEntry(
-      {required this.fighterId, required this.position, this.change = 0});
+      {required this.fighterId,
+      required this.position,
+      this.change = 0,
+      this.isNew = false});
   factory _RankingEntry.fromJson(Map<String, dynamic> json) =>
       _$RankingEntryFromJson(json);
 
@@ -110,6 +123,12 @@ class _RankingEntry implements RankingEntry {
   @override
   @JsonKey()
   final int change;
+// movement vs last update (+/-)
+  /// Entered the top 15 in the latest update (ufc.com marks these `NR`
+  /// rather than giving a movement figure).
+  @override
+  @JsonKey()
+  final bool isNew;
 
   /// Create a copy of RankingEntry
   /// with the given fields replaced by the non-null parameter values.
@@ -135,16 +154,18 @@ class _RankingEntry implements RankingEntry {
                 other.fighterId == fighterId) &&
             (identical(other.position, position) ||
                 other.position == position) &&
-            (identical(other.change, change) || other.change == change));
+            (identical(other.change, change) || other.change == change) &&
+            (identical(other.isNew, isNew) || other.isNew == isNew));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, fighterId, position, change);
+  int get hashCode =>
+      Object.hash(runtimeType, fighterId, position, change, isNew);
 
   @override
   String toString() {
-    return 'RankingEntry(fighterId: $fighterId, position: $position, change: $change)';
+    return 'RankingEntry(fighterId: $fighterId, position: $position, change: $change, isNew: $isNew)';
   }
 }
 
@@ -156,7 +177,7 @@ abstract mixin class _$RankingEntryCopyWith<$Res>
       __$RankingEntryCopyWithImpl;
   @override
   @useResult
-  $Res call({String fighterId, int position, int change});
+  $Res call({String fighterId, int position, int change, bool isNew});
 }
 
 /// @nodoc
@@ -175,6 +196,7 @@ class __$RankingEntryCopyWithImpl<$Res>
     Object? fighterId = null,
     Object? position = null,
     Object? change = null,
+    Object? isNew = null,
   }) {
     return _then(_RankingEntry(
       fighterId: null == fighterId
@@ -189,6 +211,10 @@ class __$RankingEntryCopyWithImpl<$Res>
           ? _self.change
           : change // ignore: cast_nullable_to_non_nullable
               as int,
+      isNew: null == isNew
+          ? _self.isNew
+          : isNew // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }

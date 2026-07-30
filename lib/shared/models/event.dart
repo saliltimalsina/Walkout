@@ -29,6 +29,11 @@ DateTime _eventDateFromJson(String v) {
 
 String _eventDateToJson(DateTime d) => d.toUtc().toIso8601String();
 
+DateTime? _optDateFromJson(String? v) =>
+    (v == null || v.isEmpty) ? null : _eventDateFromJson(v);
+
+String? _optDateToJson(DateTime? d) => d?.toUtc().toIso8601String();
+
 @freezed
 abstract class Event with _$Event {
   const Event._();
@@ -39,6 +44,14 @@ abstract class Event with _$Event {
     @Default('') String subtitle, // e.g. "Jones vs Aspinall"
     @JsonKey(fromJson: _eventDateFromJson, toJson: _eventDateToJson)
     required DateTime date,
+
+    /// Real broadcast start of the prelims / early prelims, scraped from
+    /// ufc.com. Null when the source doesn't list them, in which case the
+    /// [prelimsLead] estimate stands in.
+    @JsonKey(fromJson: _optDateFromJson, toJson: _optDateToJson)
+    DateTime? prelimsAt,
+    @JsonKey(fromJson: _optDateFromJson, toJson: _optDateToJson)
+    DateTime? earlyPrelimsAt,
     @Default('') String venue,
     @Default('') String location,
     @Default('') String posterUrl,
@@ -63,9 +76,15 @@ abstract class Event with _$Event {
 
   int get totalBouts => mainCard.length + prelims.length;
 
-  /// Prelims start this long before the main-card walk ([date]). Matches
-  /// `PhaseSchedule.earlyPrelims` so app UI and widgets agree on fight night.
+  /// Fallback prelim lead before the main-card walk ([date]), used only when
+  /// the source didn't give us a real time. Matches `PhaseSchedule.earlyPrelims`
+  /// so app UI and widgets agree on fight night.
   static const prelimsLead = Duration(hours: 4);
+
+  /// When the night actually starts: the earliest real broadcast time we have,
+  /// else [date] minus the [prelimsLead] estimate.
+  DateTime get doorsOpen =>
+      earlyPrelimsAt ?? prelimsAt ?? date.subtract(prelimsLead);
 
   /// LIVE dies this long after the main-card walk unless the main-event
   /// result lands first. Worst-case 5-bout card is ~3.5h; 6h adds margin.
@@ -77,7 +96,7 @@ abstract class Event with _$Event {
     if (mainEvent?.winnerId != null && now.isAfter(date)) {
       return EventPhase.ended;
     }
-    if (now.isBefore(date.subtract(prelimsLead))) return EventPhase.upcoming;
+    if (now.isBefore(doorsOpen)) return EventPhase.upcoming;
     if (now.isBefore(date)) return EventPhase.prelims;
     if (now.isBefore(date.add(liveTail))) return EventPhase.mainCard;
     return EventPhase.ended;

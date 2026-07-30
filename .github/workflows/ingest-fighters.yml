@@ -17,6 +17,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r tools/ingest/requirements.txt
+      - name: Parser tests
+        run: python tools/ingest/test_parsers.py
       - name: Write service account
         run: echo "$FIREBASE_SA" > "${RUNNER_TEMP}/sa.json"
         env:

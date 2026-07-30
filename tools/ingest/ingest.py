@@ -60,35 +60,69 @@ def _slug(href):
 
 
 # ── Rankings ────────────────────────────────────────────────────────────────
+# One table row: rank cell, athlete link, then the movement cell. The movement
+# cell is empty for most rows and carries either a rank-increase/rank-decrease
+# span plus a magnitude, or an `NR` badge for a fighter entering the top 15.
+_RANK_ROW = re.compile(
+    r'views-field-weight-class-rank">\s*(\d+)\s*</td>.*?'
+    r'href="(/athlete/[^"]+)".*?'
+    r'views-field-weight-class-rank-change">(.*?)</td>', re.S)
+
+
+def _rank_change(cell):
+    """(change, isNew) from a movement cell. Positive climbs, negative drops."""
+    if "not-ranked" in cell:
+        return 0, True
+    m = re.search(r'rank-(increase|decrease)">[^<]*</span>\s*(\d+)', cell)
+    if not m:
+        return 0, False
+    n = int(m.group(2))
+    return (n if m.group(1) == "increase" else -n), False
+
+
 def scrape_rankings():
     page = fetch("https://www.ufc.com/rankings")
+    flat = re.sub(r"\s+", " ", page)
     # Split into division blocks by their header; keep first copy of each
     # division (the page renders the list twice).
-    heads = list(re.finditer(r'view-grouping-header">\s*([^<]+?)\s*<', page))
+    heads = list(re.finditer(r'view-grouping-header">\s*([^<]+?)\s*<', flat))
     out, seen = [], set()
     for i, h in enumerate(heads):
         name = htmllib.unescape(h.group(1)).strip()
         wc = WC_MAP.get(name)
         if not wc or wc in seen:
             continue
-        block = page[h.end(): heads[i + 1].start() if i + 1 < len(heads) else len(page)]
-        champ = re.search(r'rankings--athlete--champion.*?href="(/athlete/[^"]+)"', block, re.S)
-        pairs = re.findall(r'weight-class-rank">\s*(\d+).*?href="(/athlete/[^"]+)"', block, re.S)
-        if not champ and not pairs:
+        block = flat[h.end(): heads[i + 1].start() if i + 1 < len(heads) else len(flat)]
+        champ = re.search(
+            r'rankings--athlete--champion.*?href="(/athlete/[^"]+)"', block, re.S)
+        rows = _RANK_ROW.findall(block)
+        if not champ and not rows:
             continue
         seen.add(wc)
+        contenders = []
+        for rank, href, cell in rows[:15]:
+            change, is_new = _rank_change(cell)
+            contenders.append({
+                "fighterId": _slug(href),
+                "position": int(rank),
+                "change": change,
+                "isNew": is_new,
+            })
         out.append({
             "weightClass": wc,
             "championId": _slug(champ.group(1)) if champ else "",
-            "contenders": [
-                {"fighterId": _slug(href), "position": int(rank), "change": 0}
-                for rank, href in pairs[:15]
-            ],
+            "contenders": contenders,
         })
     return out
 
 
 # ── Events ──────────────────────────────────────────────────────────────────
+def _iso(epoch):
+    """UTC with the Z — the app anchors every countdown/live window on this
+    instant; a naive string would parse as device-local."""
+    return time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime(epoch))
+
+
 def scrape_events():
     page = fetch("https://www.ufc.com/events")
     # Split on the OUTER card wrapper only (class followed by space/quote), not
@@ -104,26 +138,164 @@ def scrape_events():
         ts = re.search(r'data-main-card-timestamp="(\d+)"', c)
         venue = re.search(r'taxonomy-term-title[^>]*>\s*(?:<h5[^>]*>)?\s*([^<]+)', c)
         num = re.match(r"ufc-(\d+)$", eid)
-        date_iso = ""
-        status = "upcoming"
-        if ts:
-            epoch = int(ts.group(1))
-            # UTC with the Z — the app anchors every countdown/live window on
-            # this instant; a naive string would parse as device-local.
-            date_iso = time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime(epoch))
-            status = "past" if epoch < time.time() else "upcoming"
-        # Only fields we actually scraped — omit mainCard/prelims/heroImage so
-        # merge() preserves the seeded bout data + posters.
-        out.append({
+        doc = {
             "id": eid,
             "name": f"UFC {num.group(1)}" if num else "UFC Fight Night",
             "eventType": f"UFC {num.group(1)}" if num else "UFC Fight Night",
             "subtitle": subtitle,
-            "date": date_iso,
+            "date": "",
             "venue": htmllib.unescape(venue.group(1)).strip() if venue else "",
-            "status": status,
-        })
+            "status": "upcoming",
+        }
+        if ts:
+            epoch = int(ts.group(1))
+            doc["date"] = _iso(epoch)
+            doc["status"] = "past" if epoch < time.time() else "upcoming"
+        # Real broadcast starts, so the app stops assuming a fixed 4h prelim
+        # lead. Both are optional on the page (Fight Nights often list only the
+        # main card), so only write what's actually there.
+        for attr, field in (("data-prelims-card-timestamp", "prelimsAt"),
+                            ("data-early-card-timestamp", "earlyPrelimsAt")):
+            pm = re.search(attr + r'="(\d+)"', c)
+            if pm:
+                doc[field] = _iso(int(pm.group(1)))
+        # "Las Vegas, NV, United States" — the microformat next to the venue.
+        # Some rows carry an airport-style city code instead of a name ("BG" for
+        # Belgrade); a bare code reads as noise, so drop it and keep the country.
+        city = re.search(r'locality">([^<]*)', c)
+        region = re.search(r'administrative-area">([^<]*)', c)
+        country = re.search(r'country">([^<]*)', c)
+        parts = [htmllib.unescape(x.group(1)).strip() if x else ""
+                 for x in (city, region, country)]
+        if len(parts[0]) <= 2 and parts[0].isupper():
+            parts[0] = ""
+        loc = ", ".join(p for p in parts if p)
+        if loc:
+            doc["location"] = loc
+        # mainCard/prelims/heroImage are deliberately absent so merge() keeps
+        # the seeded bout data + posters; sync_cards fills empty cards instead.
+        out.append(doc)
     return out
+
+
+# ── Fight cards (event pages, before a card has run) ────────────────────────
+# UFC only labels "Main Card"/"Prelims" on an event page once broadcast is set,
+# so a card built from scratch splits at the standard main-card size with the
+# main event first (that's the order ufc.com lists them in).
+CARD_MAIN_SIZE = 5
+# Event pages fetched per run — keeps the 30-min job quick and polite.
+CARD_SYNC_LIMIT = 8
+# Only look this far ahead; distant cards are mostly unannounced anyway.
+CARD_HORIZON_DAYS = 120
+
+
+def _wc_from_label(label):
+    """"Welterweight Title Bout" -> "welterweight". Empty for catchweight and
+    anything else outside the model's divisions."""
+    base = re.sub(r"\s*(?:Interim\s*)?(?:Title\s*)?Bout\s*$", "", label,
+                  flags=re.I).strip()
+    return WC_MAP.get(base, "")
+
+
+def _corner(block, corner):
+    """(slug, display name) for one corner, or None when absent."""
+    m = re.search(r'corner-name--' + corner + r'"(.*?)</div>', block, re.S)
+    if not m:
+        return None
+    href = re.search(r'/athlete/([^"]+)"', m.group(1))
+    name = re.sub(r"\s+", " ",
+                  htmllib.unescape(re.sub(r"<[^>]+>", " ", m.group(1))))
+    return (_slug(href.group(1)) if href else "", name.strip(" >").strip())
+
+
+def scrape_event_card(eid):
+    """Ordered bouts on an event page, main event first. Unlike
+    [scrape_event_results] this works before the card has run, which is what
+    gives newly-announced events a fight card at all."""
+    flat = re.sub(r"\s+", " ", fetch(f"https://www.ufc.com/event/{eid}"))
+    out = []
+    for b in re.split(r'class="c-listing-fight"', flat)[1:]:
+        red, blue = _corner(b, "red"), _corner(b, "blue")
+        if not red or not blue or not (red[1] and blue[1]):
+            continue
+        lm = re.search(r'c-listing-fight__class-text">\s*([^<]+)', b)
+        label = htmllib.unescape(lm.group(1)).strip() if lm else ""
+        fmid = re.search(r'data-fmid="(\d+)"', b)
+        is_title = bool(re.search(r"\bTitle\b", label, re.I))
+        bout = {
+            "id": f"{eid}-{fmid.group(1)}" if fmid else f"{eid}-{len(out) + 1}",
+            "redCornerId": red[0], "blueCornerId": blue[0],
+            "redName": red[1], "blueName": blue[1],
+            "weightLabel": label,
+            "isTitleFight": is_title,
+            "isMainEvent": False,
+            "rounds": 5 if is_title else 3,
+        }
+        wc = _wc_from_label(label)
+        if wc:
+            bout["weightClass"] = wc
+        out.append(bout)
+    if out:
+        out[0]["isMainEvent"] = True
+        out[0]["rounds"] = 5  # main events go five rounds, title or not
+    return out
+
+
+def _bout_key(b):
+    """Corner pair, order-insensitive — the only stable identity across a
+    scrape and the stored doc (fmid is absent from seeded bouts)."""
+    return frozenset((b.get("redCornerId") or b.get("redName", ""),
+                      b.get("blueCornerId") or b.get("blueName", "")))
+
+
+def sync_cards(client, dry_run=False, limit=CARD_SYNC_LIMIT):
+    """Give upcoming events their fight card.
+
+    An event with no bouts gets the whole scraped card. An event that already
+    has bouts only gains the ones announced since — seeded ordering, posters and
+    graded results are never rewritten, and `locked` is always respected.
+    """
+    now = time.time()
+    synced = []
+    for snap in client.collection("events").stream():
+        if len(synced) >= limit:
+            break
+        doc = snap.to_dict() or {}
+        epoch = _event_epoch(doc.get("date", ""))
+        if epoch is None or not (now < epoch < now + CARD_HORIZON_DAYS * 86400):
+            continue
+        locked = doc.get("locked", [])
+        main, prelims = doc.get("mainCard", []), doc.get("prelims", [])
+        if not main and not prelims:
+            if "mainCard" in locked or "prelims" in locked:
+                continue
+        elif "prelims" in locked:
+            continue
+        try:
+            scraped = scrape_event_card(snap.id)
+        except Exception as e:
+            print(f"card {snap.id} fetch failed: {e}", file=sys.stderr)
+            continue
+        if not scraped:
+            continue
+
+        if not main and not prelims:
+            update = {"mainCard": scraped[:CARD_MAIN_SIZE],
+                      "prelims": scraped[CARD_MAIN_SIZE:]}
+            added = len(scraped)
+        else:
+            known = {_bout_key(b) for b in list(main) + list(prelims)}
+            extra = [b for b in scraped if _bout_key(b) not in known]
+            if not extra:
+                continue
+            update = {"prelims": list(prelims) + extra}
+            added = len(extra)
+
+        synced.append({"event": snap.id, "bouts": added})
+        if not dry_run:
+            update["updatedAt"] = firestore.SERVER_TIMESTAMP
+            snap.reference.set(update, merge=True)
+    return synced
 
 
 # ── Results (event pages, once a card has run) ──────────────────────────────
@@ -244,6 +416,45 @@ def _stat_num(page, label):
     return int(m.group(1)) if m else 0
 
 
+def _bio_field(flat, label):
+    """A `c-bio__label` / `c-bio__text` pair, e.g. Age, Height, Reach."""
+    m = re.search(
+        r'c-bio__label">' + re.escape(label) +
+        r'</div> <div class="c-bio__text[^"]*">\s*(?:<div[^>]*>)?\s*([^<]{0,80})',
+        flat)
+    return htmllib.unescape(m.group(1)).strip() if m else ""
+
+
+def _num(text):
+    m = re.search(r"[\d.]+", text or "")
+    return float(m.group(0)) if m else 0.0
+
+
+def _in_to_cm(text):
+    """ufc.com lists height and reach in inches ("70.50")."""
+    v = _num(text)
+    return round(v * 2.54) if v else 0
+
+
+def _compare_stats(flat):
+    """The `c-stat-compare` grid: per-minute rates and the two defense
+    percentages. Label text is the key, so a layout reshuffle can't mis-assign
+    values the way positional parsing would."""
+    out = {}
+    for m in re.finditer(r'c-stat-compare__number">\s*([\d.]+)', flat):
+        win = flat[m.end():m.end() + 260]
+        lm = re.search(r'c-stat-compare__label">\s*([^<]+)', win)
+        if lm:
+            out[htmllib.unescape(lm.group(1)).strip()] = float(m.group(1))
+    return out
+
+
+def _accuracy(flat, title):
+    """Accuracy donuts are rendered as SVG `<title>Striking accuracy 58%</title>`."""
+    m = re.search(r"<title>" + re.escape(title) + r"\s*(\d+)%</title>", flat, re.I)
+    return float(m.group(1)) if m else 0.0
+
+
 def scrape_fighter(slug):
     page = fetch(f"https://www.ufc.com/athlete/{slug}")
     flat = re.sub(r"\s+", " ", page)
@@ -259,6 +470,44 @@ def scrape_fighter(slug):
         "record": {"wins": wins, "losses": losses, "draws": draws},
         "winsByKo": ko, "winsBySub": sub, "winsByDec": dec,
     }
+
+    # ── Tale of the tape ──
+    age = _bio_field(flat, "Age")
+    if age:
+        doc["age"] = int(_num(age))
+    for label, field in (("Height", "heightCm"), ("Reach", "reachCm")):
+        cm = _in_to_cm(_bio_field(flat, label))
+        if cm:
+            doc[field] = cm
+    # "Dagestan Republic, Russia" -> country only; the app renders it as origin.
+    birthplace = _bio_field(flat, "Place of Birth")
+    if birthplace:
+        doc["country"] = birthplace.split(",")[-1].strip()
+
+    # Division moves are real roster changes (Makhachev to welterweight), so
+    # follow the page rather than pinning whatever the seed captured.
+    div = re.search(r'hero-profile__division-title">\s*([^<]+)', flat)
+    if div:
+        wc = WC_MAP.get(
+            re.sub(r"\s*Division\s*$", "", htmllib.unescape(div.group(1)).strip()))
+        if wc:
+            doc["weightClass"] = wc
+
+    # ── Fight stats: every field the app models, none of which was populated ──
+    cmp_ = _compare_stats(flat)
+    stats = {
+        "sigStrikesPerMin": cmp_.get("Sig. Str. Landed", 0.0),
+        "sigStrikesAbsorbedPerMin": cmp_.get("Sig. Str. Absorbed", 0.0),
+        "takedownAvg": cmp_.get("Takedown avg", 0.0),
+        "submissionAvg": cmp_.get("Submission avg", 0.0),
+        "strikingDefense": cmp_.get("Sig. Str. Defense", 0.0),
+        "takedownDefense": cmp_.get("Takedown Defense", 0.0),
+        "strikingAccuracy": _accuracy(flat, "Striking accuracy"),
+        "takedownAccuracy": _accuracy(flat, "Takedown Accuracy"),
+    }
+    if any(stats.values()):
+        doc["stats"] = stats
+
     # CDN full-body cutout — stored as photoUrl (widgets keep bundled imageUrl;
     # in-app screens can adopt this later without a widget rewrite).
     photo = re.search(
@@ -269,17 +518,63 @@ def scrape_fighter(slug):
     return doc
 
 
+def _rank_index(rankings):
+    """{slug: (rankingPosition, isChampion)} for the current top 15 + champions."""
+    idx = {}
+    for r in rankings:
+        if r["championId"]:
+            idx[r["championId"]] = (None, True)
+        for c in r["contenders"]:
+            idx.setdefault(c["fighterId"], (c["position"], False))
+    return idx
+
+
 def scrape_fighters():
-    slugs = _ranked_slugs(scrape_rankings())
+    rankings = scrape_rankings()
+    idx = _rank_index(rankings)
     out = []
-    for s in slugs:
+    for s in _ranked_slugs(rankings):
         try:
             d = scrape_fighter(s)
-            if d:
-                out.append(d)
         except Exception:
-            pass  # one bad athlete page must not sink the batch
+            continue  # one bad athlete page must not sink the batch
+        if not d:
+            continue
+        # Rank and title status live in the rankings collection, but the app also
+        # reads them off the fighter (RankBadge, championsProvider), so keep the
+        # copy in step or a title change never shows up there.
+        position, is_champ = idx.get(s, (None, False))
+        d["rankingPosition"] = position
+        d["isChampion"] = is_champ
+        out.append(d)
     return out
+
+
+def sync_unranked(client, ranked_index, dry_run=False):
+    """Clear rank/title flags on fighters who dropped out of the top 15.
+
+    [scrape_fighters] only visits ranked athletes, so without this pass a former
+    champion or contender keeps their badge forever.
+    """
+    cleared = []
+    for snap in client.collection("fighters").stream():
+        if snap.id in ranked_index:
+            continue
+        doc = snap.to_dict() or {}
+        locked = doc.get("locked", [])
+        update = {}
+        if doc.get("rankingPosition") is not None \
+                and "rankingPosition" not in locked:
+            update["rankingPosition"] = None
+        if doc.get("isChampion") and "isChampion" not in locked:
+            update["isChampion"] = False
+        if not update:
+            continue
+        cleared.append(snap.id)
+        if not dry_run:
+            update["updatedAt"] = firestore.SERVER_TIMESTAMP
+            snap.reference.set(update, merge=True)
+    return cleared
 
 
 # ── Firestore write (merge, respect locked) ──────────────────────────────────
@@ -329,17 +624,23 @@ def main():
         if docs and not args.dry_run:
             upsert(client, name, docs, id_key)
 
-    # Feed runs also grade recently-finished cards (Pick'Em scoring, past-event
-    # results, Living Widget result state). Needs Firestore, so skipped on
-    # --dry-run.
-    if args.mode == "feed" and not args.dry_run:
-        try:
-            graded = apply_results(client)
-        except Exception as e:
-            errors.append(f"results: {e}")
-            graded = []
-        results["graded"] = len(graded)
-        scraped["graded"] = graded
+    # Passes that need to read Firestore first, so they're skipped on --dry-run.
+    # feed: fill fight cards for upcoming events, then grade the finished ones
+    # (Pick'Em scoring, past-event results, Living Widget result state).
+    # fighters: strip stale rank/title badges off athletes who fell out.
+    if not args.dry_run:
+        passes = [("cards", sync_cards), ("graded", apply_results)] \
+            if args.mode == "feed" else \
+            [("unranked", lambda c: sync_unranked(
+                c, _rank_index(scrape_rankings())))]
+        for name, fn in passes:
+            try:
+                got = fn(client)
+            except Exception as e:
+                errors.append(f"{name}: {e}")
+                got = []
+            results[name] = len(got)
+            scraped[name] = got
 
     print("ingest:", results, "errors:", errors)
     if args.dry_run:

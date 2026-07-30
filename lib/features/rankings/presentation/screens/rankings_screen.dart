@@ -35,15 +35,13 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
         loading: () => const AppLoading(label: 'Loading rankings…'),
         error: (_, __) => AppEmptyState.error(
           message: 'We couldn\'t load the rankings. Please try again.',
-          onRetry: () => ref.invalidate(rankingsProvider),
+          onRetry: () => refreshAppData(ref),
         ),
         data: (rankings) => fightersAsync.when(
           loading: () => const AppLoading(),
           error: (_, __) => AppEmptyState.error(
             message: 'We couldn\'t load the fighters. Please try again.',
-            onRetry: () => ref
-              ..invalidate(rankingsProvider)
-              ..invalidate(fightersProvider),
+            onRetry: () => refreshAppData(ref),
           ),
           data: (fighters) => _buildBody(rankings, fighters),
         ),
@@ -70,7 +68,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
 
     final moversThisWeek = rankings
         .expand((r) => r.contenders)
-        .where((e) => e.change != 0)
+        .where((e) => e.change != 0 || e.isNew)
         .length;
 
     // W/L form per fighter, newest first, derived from completed bouts.
@@ -151,7 +149,8 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
   List<Widget> _moversSection(
       DivisionRanking division, Map<String, Fighter> byId) {
     final movers = division.contenders
-        .where((e) => e.change != 0 && byId.containsKey(e.fighterId))
+        .where((e) =>
+            (e.change != 0 || e.isNew) && byId.containsKey(e.fighterId))
         .toList()
       ..sort((a, b) => b.change.abs().compareTo(a.change.abs()));
     if (movers.isEmpty) return const [];
@@ -914,8 +913,10 @@ class _MoverCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final t = context.text;
+    final isNew = entry.isNew;
     final up = entry.change > 0;
-    final color = up ? c.success : c.danger;
+    final color = isNew ? c.accent : (up ? c.success : c.danger);
+    // Climbing +3 to #10 means #13 before; a new entrant had no rank at all.
     final prev = entry.position + entry.change;
 
     return Pressable(
@@ -934,18 +935,19 @@ class _MoverCard extends StatelessWidget {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  up
-                      ? Icons.arrow_drop_up_rounded
-                      : Icons.arrow_drop_down_rounded,
-                  size: 26,
-                  color: color,
-                ),
+                if (!isNew)
+                  Icon(
+                    up
+                        ? Icons.arrow_drop_up_rounded
+                        : Icons.arrow_drop_down_rounded,
+                    size: 26,
+                    color: color,
+                  ),
                 Text(
-                  '${entry.change.abs()}',
+                  isNew ? 'NEW' : '${entry.change.abs()}',
                   style: t.titleLarge?.copyWith(
                     color: color,
-                    fontSize: 16,
+                    fontSize: isNew ? 11 : 16,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -966,7 +968,9 @@ class _MoverCard extends StatelessWidget {
                   ),
                   AppSpacing.vGapXs,
                   Text(
-                    '#$prev to #${entry.position}',
+                    isNew
+                        ? 'Enters at #${entry.position}'
+                        : '#$prev to #${entry.position}',
                     style: t.bodySmall
                         ?.copyWith(color: c.textSecondary),
                   ),
