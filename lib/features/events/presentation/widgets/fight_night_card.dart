@@ -133,9 +133,7 @@ class _Content extends StatelessWidget {
     final isTitle = main?.isTitleFight ?? false;
     final wl = main == null
         ? ''
-        : (main.weightLabel.isNotEmpty
-            ? main.weightLabel
-            : main.weightClass.label);
+        : main.division;
 
     final city = event.location.isNotEmpty
         ? event.location.split(',').first.trim()

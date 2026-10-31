@@ -190,6 +190,15 @@ CARD_SYNC_LIMIT = 8
 CARD_HORIZON_DAYS = 120
 
 
+def _division_label(label):
+    """"Heavyweight Interim Title Bout Pres. by X" -> "Heavyweight". The app
+    adds its own "Bout" / "Title Bout" suffix (title-ness is isTitleFight)."""
+    s = re.sub(r"\s*Pres\..*$", "", label, flags=re.I)
+    s = re.sub(r"\s*(?:Interim\s+)?(?:Title\s+)?Bout\s*$", "", s, flags=re.I)
+    s = re.sub(r"\s*(?:Interim\s+)?Title\s*$", "", s, flags=re.I)
+    return s.strip()
+
+
 def _wc_from_label(label):
     """"Welterweight Title Bout" -> "welterweight". Empty for catchweight and
     anything else outside the model's divisions."""
@@ -258,7 +267,7 @@ def parse_event_card(page, eid):
             "id": f"{eid}-{fmid.group(1)}" if fmid else f"{eid}-{len(out) + 1}",
             "redCornerId": red[0], "blueCornerId": blue[0],
             "redName": red[1], "blueName": blue[1],
-            "weightLabel": label,
+            "weightLabel": _division_label(label),
             "isTitleFight": is_title,
             "isMainEvent": False,
             "rounds": 5 if is_title else 3,

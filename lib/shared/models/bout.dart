@@ -36,3 +36,19 @@ abstract class Bout with _$Bout {
 
   factory Bout.fromJson(Map<String, dynamic> json) => _$BoutFromJson(json);
 }
+
+extension BoutDivision on Bout {
+  /// Division name only ("Lightweight"). Scraped labels arrive as
+  /// "Lightweight Bout" or "Heavyweight Interim Title Bout Pres. by X"; the
+  /// screens add their own "Bout" / "Title Bout" suffix.
+  String get division {
+    final s = weightLabel
+        .replaceAll(RegExp(r'\s*Pres\..*$', caseSensitive: false), '')
+        .replaceAll(
+            RegExp(r'\s*(Interim\s+)?(Title\s+)?Bout\s*$', caseSensitive: false),
+            '')
+        .replaceAll(RegExp(r'\s*(Interim\s+)?Title\s*$', caseSensitive: false), '')
+        .trim();
+    return s.isEmpty ? weightClass.label : s;
+  }
+}

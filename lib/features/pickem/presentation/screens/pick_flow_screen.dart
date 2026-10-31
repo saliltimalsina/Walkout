@@ -479,9 +479,7 @@ class _FightPosterPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
     final t = context.text;
-    final wl = bout.weightLabel.isNotEmpty
-        ? bout.weightLabel
-        : bout.weightClass.label;
+    final wl = bout.division;
     final hot = label == 'MAIN EVENT' || label == 'CO-MAIN EVENT';
     final hype = 82 + Object.hash(event.id, boutIndex).abs() % 16;
 
