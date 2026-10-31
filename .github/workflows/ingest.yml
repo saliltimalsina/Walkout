@@ -1,14 +1,15 @@
 name: Walkout ingest
 
-# Free scheduled ingest. GitHub Actions cron floors at ~5 min; 30 min is plenty
-# for UFC data off-event and keeps well inside free minutes. Also run-able by
-# hand from the Actions tab.
+# Free scheduled ingest. The repo is private, so it has to fit the free
+# 2,000 Actions minutes/month, and every run bills as at least 1 minute.
+# Hourly + 15-min fight nights + daily fighters ≈ 1,050 min/month.
+# Also run-able by hand from the Actions tab.
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "0 * * * *"
     # Fight-night cadence: US PPV/Fight Night cards run Sat evening into
     # Sun morning UTC — poll faster so status flips and results land sooner.
-    - cron: "*/10 0-7 * * 6,0"
+    - cron: "15,30,45 0-7 * * 6,0"
   workflow_dispatch:
 
 jobs:
