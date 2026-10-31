@@ -19,6 +19,7 @@ import '../widgets/fighter_bio_card.dart';
 import '../widgets/fighter_stats_section.dart';
 import '../widgets/finish_breakdown.dart';
 import '../widgets/tale_of_the_tape.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// One completed bout from this fighter's point of view.
 class _HistoryEntry {
@@ -387,8 +388,7 @@ class _FighterHero extends ConsumerWidget {
                       stops: [0.6, 1.0],
                     ).createShader(rect),
                     blendMode: BlendMode.dstIn,
-                    child: Image.asset(
-                      fighter.imageUrl,
+                    child: Image(image: appImageProvider(fighter.imageUrl),
                       fit: BoxFit.cover,
                       alignment: const Alignment(0, -0.8),
                       errorBuilder: (_, __, ___) =>
@@ -860,8 +860,7 @@ class _FightCard extends StatelessWidget {
                         stops: [0.0, 0.65, 1.0],
                       ).createShader(rect),
                       blendMode: BlendMode.dstIn,
-                      child: Image.asset(
-                        opp!.imageUrl,
+                      child: Image(image: appImageProvider(opp!.imageUrl),
                         fit: BoxFit.cover,
                         alignment: const Alignment(0, -0.9),
                         errorBuilder: (_, __, ___) =>

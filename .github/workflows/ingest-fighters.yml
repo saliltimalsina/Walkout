@@ -17,6 +17,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r tools/ingest/requirements.txt
+      - name: Parser tests
+        run: python tools/ingest/test_parsers.py
       - name: Write service account
         run: echo "$FIREBASE_SA" > "${RUNNER_TEMP}/sa.json"
         env:
@@ -25,3 +27,8 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
         run: python tools/ingest/ingest.py --mode fighters
+      - name: Data health check
+        # Reads Firestore the way the app does; fails if any doc would break
+        # the app's parser. Coverage lands in the run summary.
+        if: always()
+        run: python tools/ingest/verify.py

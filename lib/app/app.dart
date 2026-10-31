@@ -12,7 +12,6 @@ import '../core/router/app_router.dart';
 import '../core/services/firebase_bootstrap.dart';
 import '../core/theme/app_theme.dart';
 import '../features/home_widgets/home_widget_service.dart';
-import '../shared/data/app_dataset.dart';
 import '../shared/providers/data_providers.dart';
 import '../shared/providers/favorites_controller.dart';
 
@@ -40,6 +39,8 @@ class _WalkoutAppState extends ConsumerState<WalkoutApp>
   /// Foregrounding the app is the cheapest freshness trigger there is: the
   /// widgets re-render and the time-derived event lists re-filter, so a LIVE
   /// flip that happened while backgrounded shows without a pull-to-refresh.
+  /// This also re-pulls Firestore (throttled to once a minute), which is what
+  /// recovers a session that cold-started offline on the bundled JSON.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
@@ -48,11 +49,10 @@ class _WalkoutAppState extends ConsumerState<WalkoutApp>
       return;
     }
     _lastResumeRefresh = now;
+    // Ingest runs every 30 min, so a 15-min window catches new data roughly one
+    // cycle behind at worst while capping refetches at ~4/hour.
+    refreshAppDataIfStale(ref, maxAge: const Duration(minutes: 15));
     unawaited(HomeWidgetService.refresh(ref.read(storageServiceProvider)));
-    ref
-      ..invalidate(upcomingEventsProvider)
-      ..invalidate(pastEventsProvider)
-      ..invalidate(featuredEventProvider);
   }
 
   Future<void> _initHomeWidgets() async {
@@ -75,10 +75,14 @@ class _WalkoutAppState extends ConsumerState<WalkoutApp>
     });
 
     // Dashboard publish → data-changed push while the app is open: drop the
-    // cached dataset and re-render widgets with the latest Firestore data.
-    if (AppConstants.firebaseEnabled && FirebaseBootstrap.isReady) {
+    // cached dataset, re-pull the on-screen lists and re-render the widgets
+    // with the latest Firestore data.
+    if (AppConstants.firebaseEnabled &&
+        await FirebaseBootstrap.ensureReady() &&
+        mounted) {
       FirebaseMessaging.onMessage.listen((_) {
-        AppDataset.reset();
+        if (!mounted) return;
+        refreshAppData(ref);
         unawaited(HomeWidgetService.refresh(storage));
       });
     }

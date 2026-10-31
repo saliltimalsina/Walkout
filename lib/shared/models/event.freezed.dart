@@ -20,6 +20,14 @@ mixin _$Event {
   String get subtitle; // e.g. "Jones vs Aspinall"
   @JsonKey(fromJson: _eventDateFromJson, toJson: _eventDateToJson)
   DateTime get date;
+
+  /// Real broadcast start of the prelims / early prelims, scraped from
+  /// ufc.com. Null when the source doesn't list them, in which case the
+  /// [prelimsLead] estimate stands in.
+  @JsonKey(fromJson: _optDateFromJson, toJson: _optDateToJson)
+  DateTime? get prelimsAt;
+  @JsonKey(fromJson: _optDateFromJson, toJson: _optDateToJson)
+  DateTime? get earlyPrelimsAt;
   String get venue;
   String get location;
   String get posterUrl;
@@ -56,6 +64,10 @@ mixin _$Event {
             (identical(other.subtitle, subtitle) ||
                 other.subtitle == subtitle) &&
             (identical(other.date, date) || other.date == date) &&
+            (identical(other.prelimsAt, prelimsAt) ||
+                other.prelimsAt == prelimsAt) &&
+            (identical(other.earlyPrelimsAt, earlyPrelimsAt) ||
+                other.earlyPrelimsAt == earlyPrelimsAt) &&
             (identical(other.venue, venue) || other.venue == venue) &&
             (identical(other.location, location) ||
                 other.location == location) &&
@@ -78,6 +90,8 @@ mixin _$Event {
       name,
       subtitle,
       date,
+      prelimsAt,
+      earlyPrelimsAt,
       venue,
       location,
       posterUrl,
@@ -89,7 +103,7 @@ mixin _$Event {
 
   @override
   String toString() {
-    return 'Event(id: $id, name: $name, subtitle: $subtitle, date: $date, venue: $venue, location: $location, posterUrl: $posterUrl, heroImage: $heroImage, eventType: $eventType, status: $status, mainCard: $mainCard, prelims: $prelims)';
+    return 'Event(id: $id, name: $name, subtitle: $subtitle, date: $date, prelimsAt: $prelimsAt, earlyPrelimsAt: $earlyPrelimsAt, venue: $venue, location: $location, posterUrl: $posterUrl, heroImage: $heroImage, eventType: $eventType, status: $status, mainCard: $mainCard, prelims: $prelims)';
   }
 }
 
@@ -104,6 +118,10 @@ abstract mixin class $EventCopyWith<$Res> {
       String subtitle,
       @JsonKey(fromJson: _eventDateFromJson, toJson: _eventDateToJson)
       DateTime date,
+      @JsonKey(fromJson: _optDateFromJson, toJson: _optDateToJson)
+      DateTime? prelimsAt,
+      @JsonKey(fromJson: _optDateFromJson, toJson: _optDateToJson)
+      DateTime? earlyPrelimsAt,
       String venue,
       String location,
       String posterUrl,
@@ -130,6 +148,8 @@ class _$EventCopyWithImpl<$Res> implements $EventCopyWith<$Res> {
     Object? name = null,
     Object? subtitle = null,
     Object? date = null,
+    Object? prelimsAt = freezed,
+    Object? earlyPrelimsAt = freezed,
     Object? venue = null,
     Object? location = null,
     Object? posterUrl = null,
@@ -156,6 +176,14 @@ class _$EventCopyWithImpl<$Res> implements $EventCopyWith<$Res> {
           ? _self.date
           : date // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      prelimsAt: freezed == prelimsAt
+          ? _self.prelimsAt
+          : prelimsAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      earlyPrelimsAt: freezed == earlyPrelimsAt
+          ? _self.earlyPrelimsAt
+          : earlyPrelimsAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       venue: null == venue
           ? _self.venue
           : venue // ignore: cast_nullable_to_non_nullable
@@ -201,6 +229,10 @@ class _Event extends Event {
       this.subtitle = '',
       @JsonKey(fromJson: _eventDateFromJson, toJson: _eventDateToJson)
       required this.date,
+      @JsonKey(fromJson: _optDateFromJson, toJson: _optDateToJson)
+      this.prelimsAt,
+      @JsonKey(fromJson: _optDateFromJson, toJson: _optDateToJson)
+      this.earlyPrelimsAt,
       this.venue = '',
       this.location = '',
       this.posterUrl = '',
@@ -225,6 +257,16 @@ class _Event extends Event {
   @override
   @JsonKey(fromJson: _eventDateFromJson, toJson: _eventDateToJson)
   final DateTime date;
+
+  /// Real broadcast start of the prelims / early prelims, scraped from
+  /// ufc.com. Null when the source doesn't list them, in which case the
+  /// [prelimsLead] estimate stands in.
+  @override
+  @JsonKey(fromJson: _optDateFromJson, toJson: _optDateToJson)
+  final DateTime? prelimsAt;
+  @override
+  @JsonKey(fromJson: _optDateFromJson, toJson: _optDateToJson)
+  final DateTime? earlyPrelimsAt;
   @override
   @JsonKey()
   final String venue;
@@ -293,6 +335,10 @@ class _Event extends Event {
             (identical(other.subtitle, subtitle) ||
                 other.subtitle == subtitle) &&
             (identical(other.date, date) || other.date == date) &&
+            (identical(other.prelimsAt, prelimsAt) ||
+                other.prelimsAt == prelimsAt) &&
+            (identical(other.earlyPrelimsAt, earlyPrelimsAt) ||
+                other.earlyPrelimsAt == earlyPrelimsAt) &&
             (identical(other.venue, venue) || other.venue == venue) &&
             (identical(other.location, location) ||
                 other.location == location) &&
@@ -315,6 +361,8 @@ class _Event extends Event {
       name,
       subtitle,
       date,
+      prelimsAt,
+      earlyPrelimsAt,
       venue,
       location,
       posterUrl,
@@ -326,7 +374,7 @@ class _Event extends Event {
 
   @override
   String toString() {
-    return 'Event(id: $id, name: $name, subtitle: $subtitle, date: $date, venue: $venue, location: $location, posterUrl: $posterUrl, heroImage: $heroImage, eventType: $eventType, status: $status, mainCard: $mainCard, prelims: $prelims)';
+    return 'Event(id: $id, name: $name, subtitle: $subtitle, date: $date, prelimsAt: $prelimsAt, earlyPrelimsAt: $earlyPrelimsAt, venue: $venue, location: $location, posterUrl: $posterUrl, heroImage: $heroImage, eventType: $eventType, status: $status, mainCard: $mainCard, prelims: $prelims)';
   }
 }
 
@@ -342,6 +390,10 @@ abstract mixin class _$EventCopyWith<$Res> implements $EventCopyWith<$Res> {
       String subtitle,
       @JsonKey(fromJson: _eventDateFromJson, toJson: _eventDateToJson)
       DateTime date,
+      @JsonKey(fromJson: _optDateFromJson, toJson: _optDateToJson)
+      DateTime? prelimsAt,
+      @JsonKey(fromJson: _optDateFromJson, toJson: _optDateToJson)
+      DateTime? earlyPrelimsAt,
       String venue,
       String location,
       String posterUrl,
@@ -368,6 +420,8 @@ class __$EventCopyWithImpl<$Res> implements _$EventCopyWith<$Res> {
     Object? name = null,
     Object? subtitle = null,
     Object? date = null,
+    Object? prelimsAt = freezed,
+    Object? earlyPrelimsAt = freezed,
     Object? venue = null,
     Object? location = null,
     Object? posterUrl = null,
@@ -394,6 +448,14 @@ class __$EventCopyWithImpl<$Res> implements _$EventCopyWith<$Res> {
           ? _self.date
           : date // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      prelimsAt: freezed == prelimsAt
+          ? _self.prelimsAt
+          : prelimsAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      earlyPrelimsAt: freezed == earlyPrelimsAt
+          ? _self.earlyPrelimsAt
+          : earlyPrelimsAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       venue: null == venue
           ? _self.venue
           : venue // ignore: cast_nullable_to_non_nullable

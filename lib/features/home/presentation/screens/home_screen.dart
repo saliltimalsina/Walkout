@@ -28,10 +28,7 @@ class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   Future<void> _refresh(WidgetRef ref) async {
-    ref.invalidate(featuredEventProvider);
-    ref.invalidate(championsProvider);
-    ref.invalidate(upcomingEventsProvider);
-    ref.invalidate(fightersProvider);
+    refreshAppData(ref);
     await Future.wait([
       ref.read(featuredEventProvider.future),
       ref.read(championsProvider.future),

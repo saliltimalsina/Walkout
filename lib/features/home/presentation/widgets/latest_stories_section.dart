@@ -10,6 +10,7 @@ import 'package:walkout/shared/providers/data_providers.dart';
 import 'package:walkout/shared/widgets/app_card.dart';
 import 'package:walkout/shared/widgets/app_skeleton.dart';
 import 'package:walkout/shared/widgets/section_header.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 class _Story {
   const _Story(this.image, this.title, this.time, this.route);
@@ -132,8 +133,7 @@ class _StoryRow extends StatelessWidget {
               height: 84,
               child: story.image.isEmpty
                   ? ColoredBox(color: c.surfaceElevated)
-                  : Image.asset(
-                      story.image,
+                  : Image(image: appImageProvider(story.image),
                       fit: BoxFit.cover,
                       alignment: const Alignment(0, -0.3),
                       errorBuilder: (_, __, ___) =>

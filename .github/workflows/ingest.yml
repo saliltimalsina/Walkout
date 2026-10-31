@@ -22,6 +22,10 @@ jobs:
           python-version: "3.12"
       - name: Install deps
         run: pip install -r tools/ingest/requirements.txt
+      - name: Parser tests
+        # Cheap guard: if ufc.com reshuffles its markup the parsers go quietly
+        # empty, so fail the run rather than writing blanks over good data.
+        run: python tools/ingest/test_parsers.py
       - name: Write service account
         run: echo "$FIREBASE_SA" > "${RUNNER_TEMP}/sa.json"
         env:
@@ -30,3 +34,8 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
         run: python tools/ingest/ingest.py
+      - name: Data health check
+        # Reads Firestore the way the app does; fails if any doc would break
+        # the app's parser. Coverage lands in the run summary.
+        if: always()
+        run: python tools/ingest/verify.py

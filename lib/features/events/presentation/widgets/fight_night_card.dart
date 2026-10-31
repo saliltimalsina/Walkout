@@ -11,6 +11,7 @@ import 'package:walkout/shared/widgets/widgets.dart';
 
 import 'card_label.dart';
 import 'glow_vs.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// Full-width Fight Night row with poster energy: the main-event duo
 /// portraits fade in from the right edge, the matchup gets the house
@@ -260,8 +261,7 @@ class _PortraitDuo extends StatelessWidget {
           errorWidget: (_, __, ___) => ColoredBox(color: c.surfaceElevated),
         );
       }
-      return Image.asset(
-        img,
+      return Image(image: appImageProvider(img),
         fit: BoxFit.cover,
         alignment: const Alignment(0, -0.9),
         errorBuilder: (_, __, ___) => ColoredBox(color: c.surfaceElevated),

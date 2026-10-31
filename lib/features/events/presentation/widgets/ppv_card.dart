@@ -9,6 +9,7 @@ import 'package:walkout/shared/models/models.dart';
 
 import 'card_label.dart';
 import 'glow_vs.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// Poster-style event card: cover art, date badge, stacked main-event names,
 /// venue and bout line. Used on the events PPV rail and the home feed.
@@ -60,8 +61,7 @@ class PpvCard extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               if (event.heroImage.isNotEmpty)
-                Image.asset(
-                  event.heroImage,
+                Image(image: appImageProvider(event.heroImage),
                   fit: BoxFit.cover,
                   alignment: Alignment.topCenter,
                   errorBuilder: (_, __, ___) =>

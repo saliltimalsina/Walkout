@@ -6,6 +6,7 @@ import 'package:walkout/core/theme/app_spacing.dart';
 import 'package:walkout/core/utils/context_extensions.dart';
 import 'package:walkout/shared/models/fighter.dart';
 import 'package:walkout/shared/widgets/pressable.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// Portrait card with a bell toggle used on the notifications step.
 /// Image sits inset (contained) in the upper area; name/division live on a
@@ -53,8 +54,7 @@ class NotifyFighterCard extends StatelessWidget {
                   if (fighter.imageUrl.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
-                      child: Image.asset(
-                        fighter.imageUrl,
+                      child: Image(image: appImageProvider(fighter.imageUrl),
                         fit: BoxFit.contain,
                         alignment: Alignment.bottomCenter,
                         errorBuilder: (_, __, ___) => const SizedBox.shrink(),

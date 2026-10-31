@@ -49,7 +49,12 @@ class _MoverRow extends StatelessWidget {
         children: [
           AppAvatar(name: f.name, imageUrl: f.imageUrl, size: 40),
           AppSpacing.hGapMd,
-          SizedBox(width: 34, child: Center(child: _Delta(change: mover.change))),
+          SizedBox(
+            width: 34,
+            child: Center(
+              child: _Delta(change: mover.change, isNew: mover.isNew),
+            ),
+          ),
           AppSpacing.hGapMd,
           Expanded(
             child: Column(
@@ -74,7 +79,7 @@ class _MoverRow extends StatelessWidget {
           ),
           AppSpacing.hGapSm,
           Text(
-            '#${f.rankingPosition ?? '-'}',
+            '#${mover.position}',
             style:
                 context.text.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
@@ -85,14 +90,15 @@ class _MoverRow extends StatelessWidget {
 }
 
 class _Delta extends StatelessWidget {
-  const _Delta({required this.change});
+  const _Delta({required this.change, this.isNew = false});
 
   final int change;
+  final bool isNew;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    if (change == 0) {
+    if (isNew || change == 0) {
       return Text(
         'NEW',
         style: context.text.labelSmall

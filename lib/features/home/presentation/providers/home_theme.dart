@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:palette_generator/palette_generator.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// Darkens a color until it's safe as a page background behind white/near-white
 /// foreground text — targets a relative luminance that yields WCAG AA (>= ~4.5:1)
@@ -25,7 +26,7 @@ final heroTintProvider = FutureProvider.family<Color, String>((ref, asset) async
   if (asset.isEmpty) return const Color(0xFF090909);
   try {
     final pg = await PaletteGenerator.fromImageProvider(
-      AssetImage(asset),
+      appImageProvider(asset),
       size: const Size(220, 140),
       maximumColorCount: 8,
     );

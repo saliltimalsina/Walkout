@@ -19,6 +19,7 @@ import '../widgets/featured_event_card.dart';
 import '../widgets/fight_night_card.dart';
 import '../widgets/glow_vs.dart';
 import '../widgets/ppv_card.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// Category filters computed from event data.
 enum _EventFilter {
@@ -512,8 +513,7 @@ class _PastEventCard extends StatelessWidget {
 
     Widget portrait(String img) => img.isEmpty
         ? ColoredBox(color: c.surfaceElevated)
-        : Image.asset(
-            img,
+        : Image(image: appImageProvider(img),
             fit: BoxFit.cover,
             alignment: const Alignment(0, -0.9),
             errorBuilder: (_, __, ___) =>

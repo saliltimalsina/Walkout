@@ -17,6 +17,7 @@ import 'package:walkout/shared/models/models.dart';
 import 'package:walkout/shared/providers/data_providers.dart';
 import 'package:walkout/shared/providers/pickem_controller.dart';
 import 'package:walkout/shared/widgets/widgets.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// The four share formats. Results and Upset only exist once fights finish.
 enum ShareFormat {
@@ -437,8 +438,7 @@ class _FadedPortrait extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (imageUrl.isEmpty) return const SizedBox.shrink();
-    Widget img = Image.asset(
-      imageUrl,
+    Widget img = Image(image: appImageProvider(imageUrl),
       fit: BoxFit.cover,
       alignment: alignment,
       errorBuilder: (_, __, ___) => const SizedBox.shrink(),
@@ -674,8 +674,7 @@ class _MainEventHeader extends StatelessWidget {
                     opacity: 0.45,
                     child: ColorFiltered(
                       colorFilter: _grayscaleFilter,
-                      child: Image.asset(
-                        event.heroImage,
+                      child: Image(image: appImageProvider(event.heroImage),
                         fit: BoxFit.cover,
                         alignment: const Alignment(0, -0.4),
                         errorBuilder: (_, __, ___) =>
@@ -967,8 +966,7 @@ class _ChallengePoster extends StatelessWidget {
               opacity: 0.2,
               child: ColorFiltered(
                 colorFilter: _grayscaleFilter,
-                child: Image.asset(
-                  event.heroImage,
+                child: Image(image: appImageProvider(event.heroImage),
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),

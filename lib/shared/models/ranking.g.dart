@@ -11,6 +11,7 @@ _RankingEntry _$RankingEntryFromJson(Map<String, dynamic> json) =>
       fighterId: json['fighterId'] as String,
       position: (json['position'] as num).toInt(),
       change: (json['change'] as num?)?.toInt() ?? 0,
+      isNew: json['isNew'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$RankingEntryToJson(_RankingEntry instance) =>
@@ -18,6 +19,7 @@ Map<String, dynamic> _$RankingEntryToJson(_RankingEntry instance) =>
       'fighterId': instance.fighterId,
       'position': instance.position,
       'change': instance.change,
+      'isNew': instance.isNew,
     };
 
 _DivisionRanking _$DivisionRankingFromJson(Map<String, dynamic> json) =>

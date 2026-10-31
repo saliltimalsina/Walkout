@@ -35,10 +35,7 @@ class SearchResults extends ConsumerWidget {
       if (hasError) {
         return AppEmptyState.error(
           message: "We couldn't load search results. Please try again.",
-          onRetry: () => ref
-            ..invalidate(fightersProvider)
-            ..invalidate(upcomingEventsProvider)
-            ..invalidate(pastEventsProvider),
+          onRetry: () => refreshAppData(ref),
         );
       }
       return const AppLoading();

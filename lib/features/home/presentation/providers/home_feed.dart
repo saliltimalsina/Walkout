@@ -40,25 +40,43 @@ final statsLeadersProvider = Provider<List<StatLeader>>((ref) {
   ];
 });
 
-/// A rankings "mover" (synthesized movement for the feed, over the real roster).
+/// A rankings "mover": who actually climbed, fell, or entered the top 15 in
+/// UFC's latest rankings update.
 class Mover {
-  const Mover(this.fighter, this.change);
+  const Mover(this.fighter, this.change,
+      {required this.position, this.isNew = false});
   final Fighter fighter;
-  final int change; // >0 up, <0 down, 0 new
+  final int change; // >0 up, <0 down
+  final bool isNew; // entered the top 15 this update
+
+  /// Rank from the rankings collection, which is the authority — the copy on
+  /// [Fighter] only refreshes when that doc is rewritten.
+  final int position;
 }
 
+/// Real movement from the scraped rankings. Weeks with no reshuffle legitimately
+/// produce an empty list, and the section hides itself rather than inventing
+/// motion to fill the space.
 final rankingsMoversProvider = Provider<List<Mover>>((ref) {
-  final all = ref.watch(fightersProvider).valueOrNull ?? const <Fighter>[];
-  final ranked = all
-      .where((f) => f.rankingPosition != null && f.rankingPosition! <= 15)
-      .toList()
-    ..sort((a, b) => a.rankingPosition!.compareTo(b.rankingPosition!));
-  if (ranked.isEmpty) return const [];
-  // Deterministic, varied movement for a lively feed.
-  const deltas = [2, -1, 3, 0, 1, -2];
-  final picks = <Mover>[];
-  for (var i = 0; i < ranked.length && picks.length < 4; i += 3) {
-    picks.add(Mover(ranked[i], deltas[i % deltas.length]));
+  final divisions = ref.watch(rankingsProvider).valueOrNull;
+  final all = ref.watch(fightersProvider).valueOrNull;
+  if (divisions == null || all == null) return const [];
+  final byId = {for (final f in all) f.id: f};
+
+  final movers = <Mover>[];
+  for (final d in divisions) {
+    for (final e in d.contenders) {
+      if (e.change == 0 && !e.isNew) continue;
+      final f = byId[e.fighterId];
+      if (f == null) continue;
+      movers.add(
+          Mover(f, e.change, position: e.position, isNew: e.isNew));
+    }
   }
-  return picks;
+  // Biggest swings first; new entries rank alongside a one-place climb.
+  movers.sort((a, b) {
+    final byMagnitude = b.change.abs().compareTo(a.change.abs());
+    return byMagnitude != 0 ? byMagnitude : a.fighter.name.compareTo(b.fighter.name);
+  });
+  return movers.take(4).toList();
 });

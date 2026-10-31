@@ -9,6 +9,7 @@ import 'package:walkout/core/utils/context_extensions.dart';
 import 'package:walkout/features/events/presentation/widgets/card_label.dart';
 import 'package:walkout/shared/widgets/widgets.dart';
 import '../providers/home_feed.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 const double _kCardWidth = 148;
 const double _kRailHeight = 172;
@@ -136,8 +137,7 @@ class _FadedPortrait extends StatelessWidget {
         stops: [0.0, 0.55, 1.0],
       ).createShader(rect),
       blendMode: BlendMode.dstIn,
-      child: Image.asset(
-        imageUrl,
+      child: Image(image: appImageProvider(imageUrl),
         fit: BoxFit.cover,
         alignment: const Alignment(0, -0.9),
         errorBuilder: (_, __, ___) => const SizedBox.shrink(),

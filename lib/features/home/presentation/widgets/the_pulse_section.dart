@@ -8,6 +8,7 @@ import 'package:walkout/shared/providers/data_providers.dart';
 import 'package:walkout/shared/widgets/app_card.dart';
 import 'package:walkout/shared/widgets/app_skeleton.dart';
 import 'package:walkout/shared/widgets/section_header.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 class _PulseItem {
   const _PulseItem(
@@ -183,8 +184,7 @@ class _PulseRow extends StatelessWidget {
                   height: 60,
                   child: item.thumbImage.isEmpty
                       ? ColoredBox(color: c.surfaceElevated)
-                      : Image.asset(
-                          item.thumbImage,
+                      : Image(image: appImageProvider(item.thumbImage),
                           fit: BoxFit.cover,
                           alignment: const Alignment(0, -0.3),
                           errorBuilder: (_, __, ___) =>

@@ -16,6 +16,7 @@ import 'package:walkout/shared/widgets/widgets.dart';
 
 import '../widgets/friends_league_card.dart';
 import '../widgets/octagon_card.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// Pick'Em hub: the next card to play, your streaks, the friends league and
 /// your scored past cards.
@@ -175,8 +176,7 @@ class _NextCardHero extends ConsumerWidget {
                     stops: [0.0, 0.72, 1.0],
                   ).createShader(rect),
                   blendMode: BlendMode.dstIn,
-                  child: Image.asset(
-                    img,
+                  child: Image(image: appImageProvider(img),
                     fit: BoxFit.cover,
                     alignment: const Alignment(0, -0.9),
                     errorBuilder: (_, __, ___) => const SizedBox.shrink(),

@@ -11,6 +11,10 @@ abstract class RankingEntry with _$RankingEntry {
     required String fighterId,
     required int position, // 0 = champion, 1..15 = ranked
     @Default(0) int change, // movement vs last update (+/-)
+
+    /// Entered the top 15 in the latest update (ufc.com marks these `NR`
+    /// rather than giving a movement figure).
+    @Default(false) bool isNew,
   }) = _RankingEntry;
 
   factory RankingEntry.fromJson(Map<String, dynamic> json) =>
