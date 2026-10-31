@@ -8,6 +8,7 @@ import 'package:walkout/core/theme/app_spacing.dart';
 import 'package:walkout/core/utils/context_extensions.dart';
 import 'package:walkout/shared/providers/data_providers.dart';
 import 'package:walkout/shared/widgets/widgets.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 const double _kCardWidth = 190;
 const double _kImageHeight = 120;
@@ -140,8 +141,7 @@ class _Card extends StatelessWidget {
                   children: [
                     ColoredBox(color: c.surface),
                     if (item.image.isNotEmpty)
-                      Image.asset(
-                        item.image,
+                      Image(image: appImageProvider(item.image),
                         fit: BoxFit.cover,
                         alignment: Alignment.topCenter,
                         errorBuilder: (_, __, ___) => const SizedBox.shrink(),

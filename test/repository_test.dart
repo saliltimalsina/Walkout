@@ -74,7 +74,10 @@ void main() {
     });
 
     test('getFeatured returns a non-ended event, live preferred', () async {
-      final now = DateTime.now();
+      // Pin "now" before the earliest bundled event — the real clock passes
+      // every bundled event eventually and the featured slot goes empty.
+      final all = await repo.getAll();
+      final now = all.first.date.subtract(const Duration(days: 1));
       final featured = await repo.getFeatured(now: now);
       expect(featured, isNotNull);
       expect(featured!.statusAt(now), isNot(EventStatus.past));

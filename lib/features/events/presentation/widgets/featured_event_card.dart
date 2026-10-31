@@ -10,6 +10,7 @@ import 'package:walkout/shared/models/models.dart';
 import 'card_label.dart';
 import 'event_countdown.dart';
 import 'glow_vs.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// Full-bleed hero for the next event: cover art, stacked main-event names,
 /// bout line, date · venue and a live countdown.
@@ -54,8 +55,7 @@ class FeaturedEventCard extends StatelessWidget {
           children: [
             Positioned.fill(
               child: event.heroImage.isNotEmpty
-                  ? Image.asset(
-                      event.heroImage,
+                  ? Image(image: appImageProvider(event.heroImage),
                       fit: BoxFit.cover,
                       alignment: Alignment.topCenter,
                       errorBuilder: (_, __, ___) =>

@@ -80,8 +80,7 @@ class AppDataset {
     if (await FirebaseBootstrap.ensureReady()) {
       try {
         final remote = await _loadRemote().timeout(_remoteTimeout);
-        debugPrint(
-            '[dataset] source=firestore events=${remote.events.length} '
+        debugPrint('[dataset] source=firestore events=${remote.events.length} '
             'fighters=${remote.fighters.length} '
             'synced=${remote.syncedAt ?? 'unknown'}');
         return _cache(remote, generation);
@@ -148,23 +147,39 @@ class AppDataset {
     } catch (_) {}
     // Docs are stored in the same shape as the bundled JSON, so fromJson maps
     // straight across (seed script guarantees this contract).
-    final fighters = results[0]
-        .docs
-        .map((d) => Fighter.fromJson(_normalize(d.data())))
+    // Fighters without a bundled image (undercard athletes added by the
+    // ingest) fall back to their ufc.com photo, so every screen reading
+    // imageUrl shows a face instead of a blank.
+    final fighters = _parseAll(results[0].docs, Fighter.fromJson)
+        .map((f) => f.imageUrl.isEmpty && f.photoUrl.isNotEmpty
+            ? f.copyWith(imageUrl: f.photoUrl)
+            : f)
         .toList();
-    final rankings = results[1]
-        .docs
-        .map((d) => DivisionRanking.fromJson(_normalize(d.data())))
-        .toList();
-    final events = results[2]
-        .docs
-        .map((d) => Event.fromJson(_normalize(d.data())))
-        .toList();
+    final rankings = _parseAll(results[1].docs, DivisionRanking.fromJson);
+    final events = _parseAll(results[2].docs, Event.fromJson);
     if (fighters.isEmpty || events.isEmpty) {
       throw StateError('firestore returned empty collections');
     }
     return AppDataset._(fighters, rankings, events, 'firestore',
         syncedAt: syncedAt);
+  }
+
+  /// Parses each doc on its own and skips the ones that don't fit the model.
+  /// One half-written doc (e.g. a fighter with no name) must not throw away
+  /// the whole remote dataset and drop the app back to stale bundled data.
+  static List<T> _parseAll<T>(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    final out = <T>[];
+    for (final d in docs) {
+      try {
+        out.add(fromJson(_normalize(d.data())));
+      } catch (e) {
+        debugPrint('[dataset] skipped ${d.reference.path}: $e');
+      }
+    }
+    return out;
   }
 
   /// Firestore hands back `Timestamp` for date fields; the models expect ISO

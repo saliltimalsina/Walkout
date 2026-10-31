@@ -13,6 +13,7 @@ import 'package:walkout/shared/providers/pickem_controller.dart';
 import 'package:walkout/shared/widgets/widgets.dart';
 
 import '../widgets/octagon_card.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// Build-your-card flow: draft intro, one cinematic fight poster per page —
 /// tap a corner, drag the confidence slider — then the prelims gate and a
@@ -224,8 +225,7 @@ class _DraftIntro extends StatelessWidget {
                       stops: [0.0, 0.65, 1.0],
                     ).createShader(rect),
                     blendMode: BlendMode.dstIn,
-                    child: Image.asset(
-                      img,
+                    child: Image(image: appImageProvider(img),
                       fit: BoxFit.cover,
                       alignment: const Alignment(0, -0.8),
                       errorBuilder: (_, __, ___) => const SizedBox.shrink(),
@@ -737,8 +737,7 @@ class _PosterCorner extends StatelessWidget {
                           stops: [0.0, 0.78, 1.0],
                         ).createShader(rect),
                         blendMode: BlendMode.dstIn,
-                        child: Image.asset(
-                          img,
+                        child: Image(image: appImageProvider(img),
                           fit: BoxFit.cover,
                           alignment: const Alignment(0, -0.75),
                           errorBuilder: (_, __, ___) =>

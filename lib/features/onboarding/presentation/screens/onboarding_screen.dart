@@ -7,6 +7,7 @@ import 'package:walkout/core/theme/app_spacing.dart';
 
 import '../widgets/google_sign_in_button.dart';
 import '../widgets/legal_footer.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// Welcome / sign-in screen. A full-bleed fight-night backdrop with a Skip
 /// affordance, a Google sign-in CTA, and the legal footer.
@@ -44,8 +45,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         fit: StackFit.expand,
         children: [
           // Backdrop.
-          Image.asset(
-            'assets/images/onboarding_bg.png',
+          Image(image: appImageProvider('assets/images/onboarding_bg.png'),
             fit: BoxFit.cover,
             alignment: Alignment.topCenter,
           ),

@@ -10,6 +10,7 @@ import 'package:walkout/core/utils/date_x.dart';
 import 'package:walkout/shared/models/models.dart';
 import 'package:walkout/shared/providers/data_providers.dart';
 import 'package:walkout/shared/widgets/widgets.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// Rankings as a living page: champions rail, division chips, a premium
 /// division hero, the top-15 table with form and movement, division movers
@@ -328,8 +329,7 @@ class _ChampionsRail extends StatelessWidget {
                               stops: [0.0, 0.7, 1.0],
                             ).createShader(rect),
                             blendMode: BlendMode.dstIn,
-                            child: Image.asset(
-                              champ.imageUrl,
+                            child: Image(image: appImageProvider(champ.imageUrl),
                               fit: BoxFit.cover,
                               width: double.infinity,
                               alignment: const Alignment(0, -0.9),
@@ -512,8 +512,7 @@ class _DivisionHero extends StatelessWidget {
                       stops: [0.55, 1.0],
                     ).createShader(rect),
                     blendMode: BlendMode.dstIn,
-                    child: Image.asset(
-                      champ.imageUrl,
+                    child: Image(image: appImageProvider(champ.imageUrl),
                       fit: BoxFit.cover,
                       alignment: const Alignment(0, -0.7),
                       errorBuilder: (_, __, ___) => const SizedBox.shrink(),

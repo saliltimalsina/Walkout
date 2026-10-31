@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/context_extensions.dart';
+import 'app_image.dart';
 
 /// Circular avatar. Loads a network image when available, otherwise renders a
 /// deterministic gradient with the person's initials — so the app looks
@@ -66,8 +67,7 @@ class AppAvatar extends StatelessWidget {
     // Bundled asset portraits use an "assets/" path; everything else is network.
     final isAsset = imageUrl.startsWith('assets/');
     final Widget image = isAsset
-        ? Image.asset(
-            imageUrl,
+        ? Image(image: appImageProvider(imageUrl),
             width: size,
             height: size,
             fit: BoxFit.cover,

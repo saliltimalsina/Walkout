@@ -13,6 +13,7 @@ import 'package:walkout/shared/models/bout.dart';
 import 'package:walkout/shared/models/fighter.dart';
 import 'package:walkout/shared/providers/data_providers.dart';
 import 'package:walkout/shared/widgets/widgets.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 const double _kRailWidth = 28;
 const double _kPortrait = 72;
@@ -263,8 +264,7 @@ class _FadedPortrait extends StatelessWidget {
           stops: [0.0, 0.45, 0.92],
         ).createShader(rect),
         blendMode: BlendMode.dstIn,
-        child: Image.asset(
-          imageUrl,
+        child: Image(image: appImageProvider(imageUrl),
           fit: BoxFit.cover,
           alignment: const Alignment(0, -0.9),
           errorBuilder: (_, __, ___) => const SizedBox.shrink(),

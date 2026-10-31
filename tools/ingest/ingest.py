@@ -21,6 +21,7 @@ import os
 import re
 import sys
 import time
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 
@@ -208,11 +209,42 @@ def _corner(block, corner):
     return (_slug(href.group(1)) if href else "", name.strip(" >").strip())
 
 
+def _www(url):
+    """ufc.com image URLs 301 to www — store the final host so the app skips
+    the redirect on every load."""
+    return re.sub(r"^https://ufc\.com/", "https://www.ufc.com/", url)
+
+
+def parse_event_art(page):
+    """Poster art from an event page, or "" when the page only carries the
+    generic placeholder background (unannounced cards) — those get retried on
+    a later run once real art is up."""
+    m = re.search(
+        r"""(https://(?:www\.)?ufc\.com/images/styles/background_image_lg/[^"'()\s]+)""",
+        page)
+    if not m:
+        return ""
+    url = _www(htmllib.unescape(m.group(1)))
+    if re.search(r"/BACKGROUND[^/]*$", url.split("?")[0], re.I):
+        return ""
+    return url
+
+
+def scrape_event_page(eid):
+    """(bouts, art) from one fetch of the event page."""
+    page = fetch(f"https://www.ufc.com/event/{eid}")
+    return parse_event_card(page, eid), parse_event_art(page)
+
+
 def scrape_event_card(eid):
+    return scrape_event_page(eid)[0]
+
+
+def parse_event_card(page, eid):
     """Ordered bouts on an event page, main event first. Unlike
     [scrape_event_results] this works before the card has run, which is what
     gives newly-announced events a fight card at all."""
-    flat = re.sub(r"\s+", " ", fetch(f"https://www.ufc.com/event/{eid}"))
+    flat = re.sub(r"\s+", " ", page)
     out = []
     for b in re.split(r'class="c-listing-fight"', flat)[1:]:
         red, blue = _corner(b, "red"), _corner(b, "blue")
@@ -267,31 +299,37 @@ def sync_cards(client, dry_run=False, limit=CARD_SYNC_LIMIT):
         locked = doc.get("locked", [])
         main, prelims = doc.get("mainCard", []), doc.get("prelims", [])
         if not main and not prelims:
-            if "mainCard" in locked or "prelims" in locked:
-                continue
-        elif "prelims" in locked:
+            card_ok = "mainCard" not in locked and "prelims" not in locked
+        else:
+            card_ok = "prelims" not in locked
+        art_ok = not doc.get("heroImage") and "heroImage" not in locked
+        if not card_ok and not art_ok:
             continue
         try:
-            scraped = scrape_event_card(snap.id)
+            scraped, art = scrape_event_page(snap.id)
         except Exception as e:
             print(f"card {snap.id} fetch failed: {e}", file=sys.stderr)
             continue
-        if not scraped:
+
+        update, added = {}, 0
+        if card_ok and scraped:
+            if not main and not prelims:
+                update = {"mainCard": scraped[:CARD_MAIN_SIZE],
+                          "prelims": scraped[CARD_MAIN_SIZE:]}
+                added = len(scraped)
+            else:
+                known = {_bout_key(b) for b in list(main) + list(prelims)}
+                extra = [b for b in scraped if _bout_key(b) not in known]
+                if extra:
+                    update = {"prelims": list(prelims) + extra}
+                    added = len(extra)
+        if art_ok and art:
+            update["heroImage"] = art
+        if not update:
             continue
 
-        if not main and not prelims:
-            update = {"mainCard": scraped[:CARD_MAIN_SIZE],
-                      "prelims": scraped[CARD_MAIN_SIZE:]}
-            added = len(scraped)
-        else:
-            known = {_bout_key(b) for b in list(main) + list(prelims)}
-            extra = [b for b in scraped if _bout_key(b) not in known]
-            if not extra:
-                continue
-            update = {"prelims": list(prelims) + extra}
-            added = len(extra)
-
-        synced.append({"event": snap.id, "bouts": added})
+        synced.append({"event": snap.id, "bouts": added,
+                       "art": bool(update.get("heroImage"))})
         if not dry_run:
             update["updatedAt"] = firestore.SERVER_TIMESTAMP
             snap.reference.set(update, merge=True)
@@ -299,6 +337,68 @@ def sync_cards(client, dry_run=False, limit=CARD_SYNC_LIMIT):
 
 
 # ── Results (event pages, once a card has run) ──────────────────────────────
+# Event pages fetched per run for poster backfill (past events, mostly a
+# one-off catch-up; afterwards sync_cards sets art as events are announced).
+ART_BACKFILL_LIMIT = 10
+
+
+def sync_art(client, dry_run=False, limit=ART_BACKFILL_LIMIT):
+    """Poster art for any event still without one (past events, and upcoming
+    ones beyond the card horizon). Upcoming events get it via sync_cards."""
+    filled = []
+    for snap in client.collection("events").stream():
+        if len(filled) >= limit:
+            break
+        doc = snap.to_dict() or {}
+        if doc.get("heroImage") or "heroImage" in doc.get("locked", []):
+            continue
+        try:
+            art = parse_event_art(fetch(f"https://www.ufc.com/event/{snap.id}"))
+        except Exception as e:
+            print(f"art {snap.id} fetch failed: {e}", file=sys.stderr)
+            continue
+        if not art:
+            continue
+        filled.append(snap.id)
+        if not dry_run:
+            snap.reference.set({"heroImage": art,
+                                "updatedAt": firestore.SERVER_TIMESTAMP},
+                               merge=True)
+    return filled
+
+
+def url_ok(url):
+    """False only when the server says the image is gone (4xx). Network
+    blips count as fine so a flaky run never wipes good links."""
+    req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": UA})
+    try:
+        with urllib.request.urlopen(req, timeout=20):
+            return True
+    except urllib.error.HTTPError as e:
+        return not (400 <= e.code < 500)
+    except Exception:
+        return True
+
+
+def prune_dead_images(client, coll, field, dry_run=False):
+    """Clear remote image links that now 404 so the next run re-scrapes them.
+    Bundled asset paths are never touched."""
+    pruned = []
+    for snap in client.collection(coll).stream():
+        doc = snap.to_dict() or {}
+        url = doc.get(field) or ""
+        if not url.startswith("http") or field in doc.get("locked", []):
+            continue
+        if url_ok(url):
+            continue
+        pruned.append(snap.id)
+        if not dry_run:
+            snap.reference.set({field: "",
+                                "updatedAt": firestore.SERVER_TIMESTAMP},
+                               merge=True)
+    return pruned
+
+
 def scrape_event_results(eid):
     """Finished bouts on an event page: red/blue athlete slugs, the winner,
     method and finish round. Unfinished bouts are skipped."""
@@ -470,6 +570,11 @@ def scrape_fighter(slug):
         "record": {"wins": wins, "losses": losses, "draws": draws},
         "winsByKo": ko, "winsBySub": sub, "winsByDec": dec,
     }
+    # Name is required by the app. upsert only fills it when the doc has none,
+    # so athletes first created by this pass don't land nameless.
+    name = re.search(r'hero-profile__name">\s*([^<]+)', flat)
+    if name:
+        doc["name"] = htmllib.unescape(name.group(1)).strip()
 
     # ── Tale of the tape ──
     age = _bio_field(flat, "Age")
@@ -514,7 +619,7 @@ def scrape_fighter(slug):
         r'(https://ufc\.com/images/styles/athlete_bio_full_body/[^"\s]+\.(?:png|jpg|jpeg|webp))',
         page)
     if photo:
-        doc["photoUrl"] = photo.group(1)
+        doc["photoUrl"] = _www(photo.group(1))
     return doc
 
 
@@ -529,11 +634,35 @@ def _rank_index(rankings):
     return idx
 
 
-def scrape_fighters():
+def card_slugs(client):
+    """Fighters on upcoming cards — mostly unranked, so the ranked-set pass
+    alone leaves undercard athletes without records or photos."""
+    now = time.time()
+    out = set()
+    for snap in client.collection("events").stream():
+        doc = snap.to_dict() or {}
+        epoch = _event_epoch(doc.get("date", ""))
+        if epoch is None or epoch < now - 86400:
+            continue
+        for b in list(doc.get("mainCard", [])) + list(doc.get("prelims", [])):
+            for k in ("redCornerId", "blueCornerId"):
+                if b.get(k):
+                    out.add(b[k])
+    return out
+
+
+def broken_fighter_slugs(client):
+    """Fighter docs the app can't parse (e.g. created nameless by an older
+    run) — re-scraped every day until they're whole, ranked or not."""
+    return {snap.id for snap in client.collection("fighters").stream()
+            if missing_fields("fighters", snap.to_dict() or {})}
+
+
+def scrape_fighters(extra_slugs=()):
     rankings = scrape_rankings()
     idx = _rank_index(rankings)
     out = []
-    for s in _ranked_slugs(rankings):
+    for s in sorted(set(_ranked_slugs(rankings)) | set(extra_slugs)):
         try:
             d = scrape_fighter(s)
         except Exception:
@@ -578,7 +707,30 @@ def sync_unranked(client, ranked_index, dry_run=False):
 
 
 # ── Firestore write (merge, respect locked) ──────────────────────────────────
+# Written only when the stored doc lacks them — keeps curated seed names.
+FILL_ONLY = ("name",)
+
+
+# Fields the app's models cast without a default — a doc missing one makes
+# the app's parser throw. Mirrors lib/shared/models/*.g.dart.
+REQUIRED = {"fighters": ("id", "name", "weightClass"),
+            "events": ("id", "name", "date"),
+            "rankings": ("weightClass",)}
+WEIGHT_CLASSES = set(WC_MAP.values())
+
+
+def missing_fields(coll, doc):
+    miss = [f for f in REQUIRED.get(coll, ())
+            if not isinstance(doc.get(f), str) or not doc.get(f)]
+    if "weightClass" in REQUIRED.get(coll, ()) and "weightClass" not in miss \
+            and doc["weightClass"] not in WEIGHT_CLASSES:
+        miss.append("weightClass")
+    return miss
+
+
 def upsert(client, coll, docs, id_key):
+    """Merge-write docs; returns the ids skipped for missing required fields."""
+    skipped = []
     for d in docs:
         doc_id = str(d.get(id_key, "")).strip()
         if not doc_id:
@@ -590,9 +742,17 @@ def upsert(client, coll, docs, id_key):
         for f in locked:
             if f in existing:
                 merged[f] = existing[f]
+        for f in FILL_ONLY:
+            if existing.get(f):
+                merged.pop(f, None)
+        miss = missing_fields(coll, {**existing, **merged})
+        if miss:
+            skipped.append(f"{coll}/{doc_id} missing {','.join(miss)}")
+            continue
         merged["locked"] = locked
         merged["updatedAt"] = firestore.SERVER_TIMESTAMP
         ref.set(merged, merge=True)
+    return skipped
 
 
 def main():
@@ -604,10 +764,16 @@ def main():
     args = ap.parse_args()
 
     client = None if args.dry_run else db()
-    errors, results = [], {}
+    errors, results, fatal = [], {}, []
 
     if args.mode == "fighters":
-        jobs = [("fighters", scrape_fighters, "id")]
+        extra = set()
+        if not args.dry_run:
+            try:
+                extra = card_slugs(client) | broken_fighter_slugs(client)
+            except Exception as e:
+                errors.append(f"card_slugs: {e}")
+        jobs = [("fighters", lambda: scrape_fighters(extra), "id")]
     else:
         jobs = [("rankings", scrape_rankings, "weightClass"),
                 ("events", scrape_events, "id")]
@@ -621,18 +787,27 @@ def main():
             docs = []
         results[name] = len(docs)
         scraped[name] = docs
+        if not docs:
+            # An empty core scrape means ufc.com changed its markup — fail the
+            # run loudly rather than quietly serving stale data.
+            fatal.append(f"{name}: scraper returned nothing")
         if docs and not args.dry_run:
-            upsert(client, name, docs, id_key)
+            errors.extend(upsert(client, name, docs, id_key))
 
     # Passes that need to read Firestore first, so they're skipped on --dry-run.
     # feed: fill fight cards for upcoming events, then grade the finished ones
     # (Pick'Em scoring, past-event results, Living Widget result state).
     # fighters: strip stale rank/title badges off athletes who fell out.
     if not args.dry_run:
-        passes = [("cards", sync_cards), ("graded", apply_results)] \
+        passes = [("cards", sync_cards), ("art", sync_art),
+                  ("graded", apply_results),
+                  ("deadArt", lambda c: prune_dead_images(
+                      c, "events", "heroImage"))] \
             if args.mode == "feed" else \
             [("unranked", lambda c: sync_unranked(
-                c, _rank_index(scrape_rankings())))]
+                c, _rank_index(scrape_rankings()))),
+             ("deadPhotos", lambda c: prune_dead_images(
+                 c, "fighters", "photoUrl"))]
         for name, fn in passes:
             try:
                 got = fn(client)
@@ -642,9 +817,10 @@ def main():
             results[name] = len(got)
             scraped[name] = got
 
-    print("ingest:", results, "errors:", errors)
+    print("ingest:", results, "errors:", errors + fatal)
     if args.dry_run:
-        return
+        sys.exit(1 if fatal else 0)
+    errors += fatal
 
     # Only wake every phone when the scraped content actually changed.
     # A status flip (upcoming -> past) changes the hash, so devices get a
@@ -659,14 +835,15 @@ def main():
          f"dataHash_{args.mode}": digest, "errors": errors}, merge=True)
     if digest == prev and not errors:
         print("no content change; skipping fcm push")
-        return
+        return 1 if fatal else 0
     try:
         messaging.send(messaging.Message(
             topic=FCM_TOPIC, data={"type": "data_changed"},
             android=messaging.AndroidConfig(priority="high")))
     except Exception as e:
         print("fcm send failed:", e, file=sys.stderr)
+    return 1 if fatal else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

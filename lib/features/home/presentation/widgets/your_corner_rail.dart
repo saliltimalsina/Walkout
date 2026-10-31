@@ -12,6 +12,7 @@ import 'package:walkout/shared/models/fighter.dart';
 import 'package:walkout/shared/providers/data_providers.dart';
 import 'package:walkout/shared/providers/favorites_controller.dart';
 import 'package:walkout/shared/widgets/widgets.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// Tiles shown at once — the half tile signals the rail scrolls.
 const double _kVisibleTiles = 3.5;
@@ -127,8 +128,7 @@ class _CornerCard extends StatelessWidget {
                         children: [
                           ColoredBox(color: c.surface),
                           if (fighter.imageUrl.isNotEmpty)
-                            Image.asset(
-                              fighter.imageUrl,
+                            Image(image: appImageProvider(fighter.imageUrl),
                               fit: BoxFit.cover,
                               alignment: const Alignment(0, -0.7),
                               errorBuilder: (_, __, ___) =>

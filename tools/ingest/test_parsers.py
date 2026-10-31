@@ -121,5 +121,62 @@ class RankIndex(unittest.TestCase):
         self.assertEqual(idx["dual"], (None, True))
 
 
+class EventArt(unittest.TestCase):
+    ART = ('<div style="background-image:url(https://ufc.com/images/styles/'
+           'background_image_lg/s3/2026-10/103126-ufc-fight-night-moicano-vs-'
+           'nolan-EVENT-ART.jpg?h=d1cb525d&amp;itok=aaK1fus3)">')
+
+    def test_picks_poster_and_normalizes(self):
+        self.assertEqual(
+            ingest.parse_event_art(self.ART),
+            "https://www.ufc.com/images/styles/background_image_lg/s3/2026-10/"
+            "103126-ufc-fight-night-moicano-vs-nolan-EVENT-ART.jpg"
+            "?h=d1cb525d&itok=aaK1fus3")
+
+    def test_generic_placeholder_is_skipped(self):
+        page = ('<img src="https://ufc.com/images/styles/background_image_lg/'
+                's3/image/2023-11/BACKGROUND%204.jpg?h=d1cb525d&amp;itok=x">')
+        self.assertEqual(ingest.parse_event_art(page), "")
+
+    def test_no_art(self):
+        self.assertEqual(ingest.parse_event_art("<html></html>"), "")
+
+
+class FighterName(unittest.TestCase):
+
+    def test_name_from_hero(self):
+        page = ('<h1 class="hero-profile__name">Sumudaerji</h1>'
+                '<p class="hero-profile__division-title">Flyweight Division</p>'
+                '<p>15-6-0 (W-L-D)</p>')
+        ingest.fetch, orig = (lambda url: page), ingest.fetch
+        try:
+            doc = ingest.scrape_fighter("su-mudaerji")
+        finally:
+            ingest.fetch = orig
+        self.assertEqual(doc["name"], "Sumudaerji")
+        self.assertEqual(doc["record"]["wins"], 15)
+
+
+class RequiredFields(unittest.TestCase):
+
+    def test_nameless_fighter_is_flagged(self):
+        self.assertEqual(
+            ingest.missing_fields("fighters", {"id": "x", "weightClass": "flyweight"}),
+            ["name"])
+
+    def test_unknown_weight_class_is_flagged(self):
+        self.assertEqual(ingest.missing_fields(
+            "fighters", {"id": "x", "name": "X", "weightClass": "catchweight"}),
+            ["weightClass"])
+
+    def test_complete_event_passes(self):
+        self.assertEqual(ingest.missing_fields(
+            "events", {"id": "a", "name": "UFC 1", "date": "2026-01-01"}), [])
+
+    def test_empty_string_counts_as_missing(self):
+        self.assertEqual(ingest.missing_fields(
+            "events", {"id": "a", "name": "UFC 1", "date": ""}), ["date"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

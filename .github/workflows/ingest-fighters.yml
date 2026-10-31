@@ -27,3 +27,8 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
         run: python tools/ingest/ingest.py --mode fighters
+      - name: Data health check
+        # Reads Firestore the way the app does; fails if any doc would break
+        # the app's parser. Coverage lands in the run summary.
+        if: always()
+        run: python tools/ingest/verify.py

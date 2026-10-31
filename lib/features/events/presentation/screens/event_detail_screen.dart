@@ -13,6 +13,7 @@ import 'package:walkout/shared/providers/data_providers.dart';
 import 'package:walkout/shared/widgets/widgets.dart';
 
 import '../widgets/event_countdown.dart';
+import '../../../../shared/widgets/app_image.dart';
 
 /// Full card for a single event: hero, quick nav, countdown, main card and
 /// a collapsible preliminary card.
@@ -309,8 +310,7 @@ class _DetailHero extends StatelessWidget {
                     stops: [0.0, 0.5],
                   ).createShader(rect),
                   blendMode: BlendMode.dstIn,
-                  child: Image.asset(
-                    event.heroImage,
+                  child: Image(image: appImageProvider(event.heroImage),
                     fit: BoxFit.cover,
                     alignment: Alignment.topCenter,
                     errorBuilder: (_, __, ___) => const SizedBox.shrink(),
@@ -758,8 +758,7 @@ class _MainEventCorner extends StatelessWidget {
                         stops: [0.0, 0.78, 1.0],
                       ).createShader(rect),
                       blendMode: BlendMode.dstIn,
-                      child: Image.asset(
-                        img,
+                      child: Image(image: appImageProvider(img),
                         fit: BoxFit.cover,
                         width: double.infinity,
                         alignment: const Alignment(0, -0.9),
@@ -871,8 +870,7 @@ class _CompactBoutCard extends StatelessWidget {
                   stops: const [0.25, 1.0],
                 ).createShader(rect),
                 blendMode: BlendMode.dstIn,
-                child: Image.asset(
-                  img,
+                child: Image(image: appImageProvider(img),
                   fit: BoxFit.cover,
                   alignment: const Alignment(0, -0.9),
                   errorBuilder: (_, __, ___) => const SizedBox.shrink(),
