@@ -609,9 +609,7 @@ class _MainEventCard extends StatelessWidget {
     final t = context.text;
     final red = fightersById[bout.redCornerId];
     final blue = fightersById[bout.blueCornerId];
-    final wl = bout.weightLabel.isNotEmpty
-        ? bout.weightLabel
-        : bout.weightClass.label;
+    final wl = bout.division;
     final sub = bout.isTitleFight ? '$wl Title Bout' : '$wl Bout';
     final complete = bout.winnerId != null;
 
@@ -826,9 +824,7 @@ class _CompactBoutCard extends StatelessWidget {
     final blue = fightersById[bout.blueCornerId];
     final redName = red?.name ?? bout.redName;
     final blueName = blue?.name ?? bout.blueName;
-    final wl = bout.weightLabel.isNotEmpty
-        ? bout.weightLabel
-        : bout.weightClass.label;
+    final wl = bout.division;
     final tag = label ?? '${wl.toUpperCase()} BOUT';
     final sub = bout.isTitleFight ? '$wl Title Bout' : '$wl Bout';
     final complete = bout.winnerId != null;

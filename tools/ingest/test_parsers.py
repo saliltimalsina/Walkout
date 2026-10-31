@@ -142,6 +142,18 @@ class EventArt(unittest.TestCase):
         self.assertEqual(ingest.parse_event_art("<html></html>"), "")
 
 
+class DivisionLabel(unittest.TestCase):
+
+    def test_strips_bout_title_and_sponsor(self):
+        for raw, want in (("Lightweight Bout", "Lightweight"),
+                          ("Women's Flyweight Title Bout", "Women's Flyweight"),
+                          ("Heavyweight Interim Title Bout Pres. by CRYPTO.COM",
+                           "Heavyweight"),
+                          ("Catchweight Bout", "Catchweight"),
+                          ("Middleweight", "Middleweight")):
+            self.assertEqual(ingest._division_label(raw), want)
+
+
 class FighterName(unittest.TestCase):
 
     def test_name_from_hero(self):

@@ -185,9 +185,7 @@ class _MarqueeBoutCard extends StatelessWidget {
     final blue = byId[bout.blueCornerId];
     final redName = red?.name ?? bout.redName;
     final blueName = blue?.name ?? bout.blueName;
-    final wl = bout.weightLabel.isNotEmpty
-        ? bout.weightLabel
-        : bout.weightClass.label;
+    final wl = bout.division;
     final sub = bout.isTitleFight ? '$wl Championship' : '$wl Bout';
     final nameStyle = t.titleLarge?.copyWith(
       fontSize: 16,

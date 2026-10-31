@@ -35,9 +35,7 @@ class FeaturedEventCard extends StatelessWidget {
     final main = event.mainEvent;
     final wl = main == null
         ? ''
-        : (main.weightLabel.isNotEmpty
-            ? main.weightLabel
-            : main.weightClass.label);
+        : main.division;
     final boutLine = main == null
         ? ''
         : (main.isTitleFight ? '$wl Championship' : '$wl Bout');
